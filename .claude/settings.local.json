@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Read(//c/Users/pc07/.claude/**)",
+      "Read(//c/Users/pc07/**)",
+      "Bash(npm create:*)",
+      "Bash(cp -r \"D:/product/designprototype-temp/\"* \"D:/product/designprototype/\")",
+      "Bash(cp \"D:/product/designprototype-temp/.gitignore\" \"D:/product/designprototype/\")",
+      "Bash(rm -rf \"D:/product/designprototype-temp\")",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(npx shadcn@latest init -d)"
+    ]
+  }
+}
