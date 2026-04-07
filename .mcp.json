@@ -1,10 +1,26 @@
 {
-  "context7": {
-    "command": "npx",
-    "args": ["-y", "@upstash/context7-mcp"]
-  },
-  "playwright": {
-    "command": "npx",
-    "args": ["@playwright/mcp@latest"]
+  "mcpServers": {
+    "context7": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "env": {}
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@playwright/mcp@latest"
+      ],
+      "env": {}
+    }
   }
 }

@@ -10,7 +10,20 @@
       "Bash(rm -rf \"D:/product/designprototype-temp\")",
       "Bash(npm install:*)",
       "Bash(npx tailwindcss:*)",
-      "Bash(npx shadcn@latest init -d)"
+      "Bash(npx shadcn@latest init -d)",
+      "Bash(claude mcp:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "Bash(cp \"D:/product/designprototype-temp/eslint.config.js\" \"D:/product/designprototype/\")",
+      "Bash(cp \"D:/product/designprototype-temp/index.html\" \"D:/product/designprototype/\")",
+      "Bash(cp \"D:/product/designprototype-temp/package.json\" \"D:/product/designprototype/\")",
+      "Bash(cp \"D:/product/designprototype-temp/tsconfig.app.json\" \"D:/product/designprototype/\")",
+      "Bash(cp \"D:/product/designprototype-temp/tsconfig.json\" \"D:/product/designprototype/\")",
+      "Bash(npx shadcn@latest init -d -y)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "context7",
+    "playwright"
+  ]
 }
