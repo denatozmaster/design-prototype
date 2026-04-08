@@ -15,6 +15,12 @@ const modules: Module[] = [
     description: '진료기록부·수납대장·방사선대장 전자서명 관리',
     status: 'ready',
   },
+  {
+    path: '/photo-reception',
+    title: '임상사진 무선 수신',
+    description: 'DSLR 촬영 사진 자동 감지 → 알림 → 환자 매칭 · 저장',
+    status: 'wip',
+  },
 ]
 
 const statusLabel: Record<Module['status'], string> = {
