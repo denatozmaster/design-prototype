@@ -19,7 +19,7 @@ const modules: Module[] = [
     path: '/photo-reception',
     title: '임상사진 무선 수신',
     description: 'DSLR 촬영 사진 자동 감지 → 알림 → 환자 매칭 · 저장',
-    status: 'wip',
+    status: 'ready',
   },
 ]
 
