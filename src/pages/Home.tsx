@@ -21,6 +21,18 @@ const modules: Module[] = [
     description: 'DSLR 촬영 사진 자동 감지 → 알림 → 환자 매칭 · 저장',
     status: 'ready',
   },
+  {
+    path: '/resin-surface',
+    title: '급여레진 치아면 선택',
+    description: '소아 복합레진 보험청구 — 면 선택 시 급수·면수·코드 자동 계산',
+    status: 'ready',
+  },
+  {
+    path: '/clinical-chart',
+    title: '전자차트 (템플릿)',
+    description: '전자차트 모듈의 공통 배경 화면 — 새 모듈 생성 시 복사하여 사용',
+    status: 'planned',
+  },
 ]
 
 const statusLabel: Record<Module['status'], string> = {
