@@ -19,8 +19,6 @@ import {
   FileStack,
   Camera,
   LayoutGrid,
-  LogIn,
-  Clock,
   Settings,
 } from 'lucide-react'
 import {
@@ -49,8 +47,6 @@ const NAV_ICON_MAP: Record<string, React.ElementType> = {
   eyefile: Eye,
   xray2: RadioIcon,
 }
-
-const SUB_MENU_ICONS = [Bot, CreditCard, FileStack, Camera]
 
 export default function Navigation() {
   return (

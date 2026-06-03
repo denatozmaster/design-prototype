@@ -54,7 +54,6 @@ function SurfaceDiagram({ tooth, onToggle }: { tooth: ToothState; onToggle: (s: 
 }
 
 export default function ToothCard({ tooth, onToggleSurface, onClassOverride, onRemove }: ToothCardProps) {
-  const anterior = isAnterior(tooth.toothNumber)
   const surfaceCount = calcSurfaceCount(tooth.surfaces)
   const autoClass = calcClass(tooth.toothNumber, tooth.surfaces)
   const effectiveClass = getEffectiveClass(tooth)

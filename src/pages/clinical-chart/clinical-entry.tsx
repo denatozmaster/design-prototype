@@ -1,10 +1,5 @@
 import { useState } from 'react'
-import {
-  ChevronDown,
-  Plus,
-  RotateCcw,
-  Search,
-} from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import {
   entryTabs,
   upperTeeth,
