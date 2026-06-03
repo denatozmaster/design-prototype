@@ -38,7 +38,7 @@ function SurfaceDiagram({ tooth, onToggle }: { tooth: ToothState; onToggle: (s: 
         <span>M</span><span className="text-xs font-normal opacity-70">근심</span>
       </button>
       <button className={`${base} flex-col gap-0 leading-tight ${has('O') ? active : inactive}`} onClick={() => onToggle('O')}>
-        <span>{anterior ? 'I' : 'O'}</span><span className="text-xs font-normal opacity-70">교합</span>
+        <span>{anterior ? 'I' : 'O'}</span><span className="text-xs font-normal opacity-70">{anterior ? '절단' : '교합'}</span>
       </button>
       <button className={`${base} rounded-r flex-col gap-0 leading-tight ${has('D') ? active : inactive}`} onClick={() => onToggle('D')}>
         <span>D</span><span className="text-xs font-normal opacity-70">원심</span>

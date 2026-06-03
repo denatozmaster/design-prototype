@@ -19,11 +19,45 @@
       "Bash(cp \"D:/product/designprototype-temp/package.json\" \"D:/product/designprototype/\")",
       "Bash(cp \"D:/product/designprototype-temp/tsconfig.app.json\" \"D:/product/designprototype/\")",
       "Bash(cp \"D:/product/designprototype-temp/tsconfig.json\" \"D:/product/designprototype/\")",
-      "Bash(npx shadcn@latest init -d -y)"
+      "Bash(npx shadcn@latest init -d -y)",
+      "Bash(rm:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite:*)",
+      "Bash(node -e \"const p = require\\('./node_modules/react/package.json'\\); console.log\\('React:', p.version\\)\")",
+      "Bash(node -e \"const p = require\\('./node_modules/tailwindcss/package.json'\\); console.log\\('Tailwind CSS:', p.version\\)\")",
+      "Bash(node -e \"const p = require\\('./node_modules/vite/package.json'\\); console.log\\('Vite:', p.version\\)\")",
+      "Bash(node -e \"const p = require\\('./node_modules/typescript/package.json'\\); console.log\\('TypeScript:', p.version\\)\")",
+      "Bash(npx shadcn@latest add badge card table dialog input checkbox progress separator --yes)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_click",
+      "Bash(mkdir -p public/images)",
+      "Bash(mv assets/images/*.jpg public/images/)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npm run:*)",
+      "mcp__playwright__browser_close",
+      "Bash(npx --yes sharp-cli --version)",
+      "Bash(ls public/images/*.jpg)",
+      "mcp__figma__whoami",
+      "mcp__figma__get_metadata",
+      "Bash(where python:*)",
+      "mcp__figma__get_design_context",
+      "mcp__figma__get_screenshot",
+      "Bash(dd:*)",
+      "Bash(python3 -c \" import json, sys data = json.load\\(sys.stdin\\) for i, item in enumerate\\(data\\): t = item.get\\('type',''\\) text = item.get\\('text',''\\)[:200] if 'text' in item else '' print\\(f'Item {i}: type={t}, length={len\\(item.get\\(\\\\\"text\\\\\",\\\\\"\\\\\"\\)\\)}, preview={text[:100]}...'\\) \")",
+      "Bash(node -e ':*)",
+      "Bash(node:*)",
+      "mcp__playwright__browser_resize",
+      "Bash(curl:*)",
+      "Bash(npx shadcn@latest add select -y)",
+      "mcp__playwright__browser_run_code"
     ]
   },
   "enabledMcpjsonServers": [
     "context7",
-    "playwright"
+    "playwright",
+    "figma"
   ]
 }

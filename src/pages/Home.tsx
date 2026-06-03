@@ -28,6 +28,12 @@ const modules: Module[] = [
     status: 'ready',
   },
   {
+    path: '/gi-surface',
+    title: 'GI 치면 입력',
+    description: 'GI 충전 치면 일괄 입력 — 사분면 배치 미니카드',
+    status: 'wip',
+  },
+  {
     path: '/clinical-chart',
     title: '전자차트 (템플릿)',
     description: '전자차트 모듈의 공통 배경 화면 — 새 모듈 생성 시 복사하여 사용',
