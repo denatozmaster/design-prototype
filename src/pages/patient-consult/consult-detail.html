@@ -1,0 +1,2754 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>상담내역 — 상세 뷰</title>
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
+/>
+<style>
+    :root {
+        --navy: #1b3a5b;
+        --blue: #0d9488;
+        --teal: #2563eb;
+        --teal-deep: #1d4ed8;
+        --amber: #b45309;
+        --red: #b91c1c;
+        --bg: #eef2f6;
+        --surface: #ffffff;
+        --surface-2: #f8fafc;
+        --line: #e2e8f0;
+        --line-soft: #edf1f6;
+        --ink: #0f172a;
+        --ink-2: #475569;
+        --ink-3: #94a3b8;
+        --patient: #f1f5f9;
+        --clinic: #f0f5fe;
+        --clinic-bd: #dce8fa;
+    }
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    html,
+    body {
+        height: 100%;
+    }
+    body {
+        /* 임베드(iframe): 캔버스 중앙정렬 대신 패널이 iframe을 꽉 채움 (이중스크롤 방지) */
+        overflow: hidden;
+        background: var(--surface);
+        font-family:
+            'Pretendard',
+            -apple-system,
+            'Apple SD Gothic Neo',
+            'Malgun Gothic',
+            sans-serif;
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+        font-feature-settings: 'tnum' 1;
+    }
+    button {
+        font-family: inherit;
+    }
+
+    /* ── 임베드: iframe(부모 컨테이너)를 꽉 채움 — 내부 .pane만 스크롤 ── */
+    .panel {
+        width: 100%;
+        height: 100%;
+        background: var(--surface);
+        border: none;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+    /* ── 헤더 (고정) ── */
+    .head {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 11px 16px;
+        border-bottom: 1px solid var(--line);
+        position: relative;
+        z-index: 30;
+    }
+    .back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--ink-2);
+        font-size: 13px;
+        font-weight: 600;
+        padding: 7px 11px 7px 9px;
+        border-radius: 9px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .back:hover {
+        background: #eef2f6;
+    }
+    .head-meta {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+    }
+    .head-date {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--navy);
+        letter-spacing: -0.01em;
+        font-variant-numeric: tabular-nums;
+    }
+    .head-sub {
+        font-size: 11.5px;
+        color: var(--ink-3);
+        letter-spacing: -0.01em;
+    }
+    .head-counselor {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ink-3);
+        letter-spacing: -0.01em;
+    }
+    .head-actions {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .hbtn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--ink-2);
+        font-size: 13px;
+        font-weight: 600;
+        padding: 7px 11px;
+        border-radius: 9px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .hbtn:hover {
+        background: #eef2f6;
+    }
+    .hbtn.icon {
+        padding: 8px;
+    }
+    .hbtn svg {
+        flex: 0 0 auto;
+    }
+
+    /* ── 오디오바 (대화기록 탭 하단, 구조적 고정) ── */
+    .audio {
+        flex: 0 0 auto;
+        display: none; /* 기본 숨김 — 대화 기록 탭 활성 시에만 노출 (아래 규칙) */
+        align-items: center;
+        gap: 14px;
+        padding: 10px 18px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+    }
+    /* 대화 기록(전사) 탭이 활성일 때만 패널 하단에 노출 */
+    #pane-script.active ~ .audio {
+        display: flex;
+    }
+    .pp {
+        flex: 0 0 auto;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        background: #eef2f6;
+        color: var(--navy);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .pp:hover {
+        background: #e2e8f0;
+    }
+    .track-wrap {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        min-width: 0;
+    }
+    .track {
+        flex: 1;
+        padding: 13px 0;
+        position: relative;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+    }
+    .track .bar {
+        flex: 1;
+        height: 6px;
+        border-radius: 999px;
+        background: #dce3eb;
+        position: relative;
+    }
+    .track .buf {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+    }
+    .track .fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 0%;
+        background: var(--teal);
+        border-radius: 999px;
+    }
+    .track .knob {
+        position: absolute;
+        top: 50%;
+        left: 0%;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid var(--teal);
+        transform: translate(-50%, -50%);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    }
+    .time {
+        font-size: 12px;
+        color: var(--ink-2);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    .audio-tools {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .speed {
+        position: relative;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink-2);
+        font-size: 12px;
+        font-weight: 700;
+        padding: 6px 9px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-variant-numeric: tabular-nums;
+    }
+    .speed:hover {
+        background: var(--surface-2);
+    }
+    .vol {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--ink-3);
+    }
+    .vol input[type='range'] {
+        width: 72px;
+        accent-color: var(--teal);
+        cursor: pointer;
+    }
+    .mute-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: none;
+        color: var(--ink-3);
+        cursor: pointer;
+        padding: 3px;
+        border-radius: 6px;
+    }
+    .mute-btn:hover {
+        background: #eef2f6;
+        color: var(--ink-2);
+    }
+    .mute-btn.muted {
+        color: var(--red);
+    }
+    .aud-dl {
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink-2);
+        padding: 7px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-flex;
+    }
+    .aud-dl:hover {
+        background: var(--surface-2);
+    }
+
+    /* ── 탭 (고정) ── */
+    .tabs {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 16px;
+        border-bottom: 1px solid var(--line);
+        position: relative;
+        z-index: 20;
+    }
+    .tab {
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink-3);
+        letter-spacing: -0.01em;
+        padding: 13px 12px;
+        position: relative;
+    }
+    .tab:hover {
+        color: var(--ink-2);
+    }
+    .tab.active {
+        color: var(--navy);
+        font-weight: 700;
+    }
+    .tab.active::after {
+        content: '';
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        bottom: -1px;
+        height: 2.5px;
+        background: var(--navy);
+        border-radius: 2px;
+    }
+    .tab .stale-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--amber);
+        display: none;
+        margin-left: 5px;
+        vertical-align: middle;
+    }
+    .tab.is-stale .stale-dot {
+        display: inline-block;
+    }
+    .tabs-right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* ── 탭 콘텐츠 (각자 스크롤) ── */
+    .pane {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: none;
+    }
+    .pane.active {
+        display: block;
+    }
+    .pane::-webkit-scrollbar {
+        width: 10px;
+    }
+    .pane::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+        border: 3px solid var(--surface);
+    }
+
+    /* ── 전사(메신저) ── */
+    #pane-script {
+        padding: 18px 22px 28px;
+    }
+    .turn {
+        position: relative;
+        display: flex;
+        margin-top: 3px;
+    }
+    .turn.gap {
+        margin-top: 13px;
+    } /* 화자 전환 시 간격 */
+    .turn.A {
+        justify-content: flex-end;
+    } /* 치과측 우측 */
+    .turn.B {
+        justify-content: flex-start;
+    } /* 환자측 좌측 */
+    .col {
+        max-width: 82%;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .turn.A .col {
+        align-items: flex-end;
+    }
+    .turn.B .col {
+        align-items: flex-start;
+    }
+    .bubble-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 7px;
+        max-width: 100%;
+    }
+    .turn.A .bubble-row {
+        flex-direction: row-reverse;
+    }
+
+    .bubble {
+        min-width: 0;
+        font-size: 14px;
+        line-height: 1.6;
+        letter-spacing: -0.01em;
+        padding: 10px 13px;
+        border-radius: 14px;
+        cursor: pointer;
+        border: 1.5px solid transparent;
+        transition:
+            box-shadow 0.12s ease,
+            background-color 0.12s ease;
+        word-break: break-word;
+        white-space: pre-wrap;
+    }
+    .turn.B .bubble {
+        background: var(--patient);
+        color: var(--ink);
+        border-bottom-left-radius: 5px;
+    }
+    .turn.A .bubble {
+        background: var(--clinic);
+        color: var(--ink);
+        border-color: var(--clinic-bd);
+        border-bottom-right-radius: 5px;
+    }
+    .turn .ts {
+        flex: 0 0 auto;
+        font-size: 10.5px;
+        color: var(--ink-3);
+        padding-bottom: 3px;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+    }
+
+    /* 재생 중 강조 */
+    .turn.playing .bubble {
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5);
+    }
+    .turn.A.playing .bubble {
+        background: #dbe9fb;
+    }
+    .turn.B.playing .bubble {
+        background: #e6edf4;
+    }
+
+    /* hover 액션 툴바 (가로 위치는 JS가 말풍선 기준으로 계산) */
+    .tools {
+        position: absolute;
+        top: -13px;
+        display: none;
+        gap: 2px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 3px;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.13);
+        z-index: 5;
+    }
+    .turn:hover .tools,
+    .turn.editing .tools {
+        display: flex;
+    }
+    .turn.editing .tools {
+        display: none;
+    }
+    .tool {
+        width: 27px;
+        height: 27px;
+        border: none;
+        background: none;
+        border-radius: 7px;
+        cursor: pointer;
+        color: var(--ink-2);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .tool:hover {
+        background: #f1f5f9;
+        color: var(--ink);
+    }
+    .tool.danger:hover {
+        background: #fef2f2;
+        color: var(--red);
+    }
+    .tool:disabled {
+        opacity: 0.28;
+        cursor: default;
+    }
+    .tool:disabled:hover {
+        background: none;
+        color: var(--ink-2);
+    }
+
+    /* 편집 모드 */
+    .turn.editing .bubble {
+        background: #fff !important;
+        border-color: var(--teal);
+        cursor: text;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+        outline: none;
+    }
+    .edit-bar {
+        display: none;
+        margin-top: 6px;
+        gap: 6px;
+        align-items: center;
+    }
+    .turn.editing .edit-bar {
+        display: flex;
+    }
+    .turn.A .edit-bar {
+        flex-direction: row-reverse;
+    }
+    .ebtn {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink-2);
+        font-size: 12px;
+        font-weight: 600;
+        padding: 5px 10px;
+        border-radius: 7px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .ebtn:hover {
+        background: var(--surface-2);
+    }
+    .ebtn.save {
+        background: var(--navy);
+        border-color: var(--navy);
+        color: #fff;
+    }
+    .ebtn.save:hover {
+        background: #16314d;
+    }
+    .ebtn.split {
+        color: var(--teal-deep);
+    }
+
+    /* ── 요약 / 코칭 공통 ── */
+    .doc {
+        padding: 24px 28px 36px;
+        max-width: 660px;
+        margin: 0 auto; /* 요약·상담 도우미 본문 가로 중앙정렬 */
+    }
+    .stale {
+        display: none;
+        align-items: center;
+        gap: 12px;
+        background: #fbf3e5;
+        border: 1px solid #f0dfbe;
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 20px;
+        color: #8a5a12;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    .stale.show {
+        display: flex;
+    }
+    .stale .regen {
+        margin-left: auto;
+        border: 1px solid #e2c994;
+        background: #fff;
+        color: #8a5a12;
+        font-weight: 700;
+        font-size: 12.5px;
+        padding: 6px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .stale .regen:hover {
+        background: #fffbf3;
+    }
+
+    .sec {
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid var(--line-soft);
+    }
+    .stale + .sec {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
+    }
+    .sec > h3 {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+        margin-bottom: 11px;
+    }
+    .sec p {
+        font-size: 14px;
+        line-height: 1.72;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+    }
+    .doc h2 {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--navy);
+        letter-spacing: -0.02em;
+        margin-bottom: 4px;
+    }
+    .doc .gen {
+        font-size: 11.5px;
+        color: var(--ink-3);
+        margin-bottom: 22px;
+    }
+
+    /* 정렬형 fact 행 (라벨–값 또는 단문 모두 수용) */
+    .facts {
+        display: flex;
+        flex-direction: column;
+    }
+    .fact {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--line-soft);
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    .fact:last-child {
+        border-bottom: none;
+    }
+    .fact .k {
+        flex: 1 1 auto;
+        color: var(--ink);
+        min-width: 0;
+    }
+    .fact .v {
+        flex: 0 0 auto;
+        text-align: right;
+        color: var(--ink);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    .fact.note .k {
+        color: var(--ink-2);
+    }
+
+    .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+    }
+    .chip {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-2);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        padding: 4px 10px;
+        border-radius: 999px;
+    }
+
+    /* 포인트 카드 */
+    .point {
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--teal);
+        border-radius: 11px;
+        margin-top: 10px;
+    }
+    .point.bad {
+        border-left-color: var(--amber);
+    }
+    .point .pt-h {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+    .point .pt-n {
+        width: 21px;
+        height: 21px;
+        border-radius: 6px;
+        background: var(--teal);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+    }
+    .point.bad .pt-n {
+        background: var(--amber);
+    }
+    .point .row {
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--ink-2);
+        margin-top: 7px;
+    }
+    .point .row b {
+        color: var(--ink);
+        font-weight: 600;
+    }
+    /* 관찰 / 대체 표현 라벨 */
+    .pt-line {
+        display: flex;
+        gap: 9px;
+        align-items: baseline;
+        margin-top: 10px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--ink-2);
+    }
+    .pt-tag {
+        flex: 0 0 auto;
+        font-size: 10.5px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 5px;
+        line-height: 1.5;
+        white-space: nowrap;
+    }
+    .pt-tag.obs {
+        color: var(--amber);
+        background: #fbf3e5;
+    }
+    .pt-tag.alt {
+        color: var(--teal-deep);
+        background: #e3ecfb;
+    }
+    .pt-alt {
+        display: flex;
+        gap: 9px;
+        align-items: baseline;
+        margin-top: 9px;
+        background: #f4f8fe;
+        border-radius: 9px;
+        padding: 10px 11px;
+        font-size: 13px;
+        line-height: 1.62;
+        color: var(--ink);
+    }
+
+    .quote {
+        font-size: 12.5px;
+        color: var(--ink-2);
+        background: var(--surface-2);
+        border-left: 3px solid var(--clinic-bd);
+        padding: 7px 10px;
+        border-radius: 0 7px 7px 0;
+        margin-top: 10px;
+    }
+    .quote .jump {
+        color: var(--teal-deep);
+        font-weight: 600;
+        cursor: pointer;
+        margin-left: 6px;
+        white-space: nowrap;
+    }
+    .quote .jump:hover {
+        text-decoration: underline;
+    }
+
+    .swot {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 11px;
+    }
+    .swot .q {
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        padding: 13px 15px;
+    }
+    .swot .q h4 {
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 7px;
+        letter-spacing: 0.02em;
+    }
+    .swot .q.s h4 {
+        color: var(--teal-deep);
+    }
+    .swot .q.w h4 {
+        color: var(--amber);
+    }
+    .swot .q.o h4 {
+        color: var(--blue);
+    }
+    .swot .q.t h4 {
+        color: var(--red);
+    }
+    .swot .q p {
+        font-size: 12.5px;
+        line-height: 1.6;
+        color: var(--ink-2);
+    }
+
+    /* ── 메뉴/드롭다운 ── */
+    .hwrap {
+        position: relative;
+        display: inline-flex;
+    }
+    .swrap {
+        position: relative;
+        display: inline-flex;
+    }
+    .menu {
+        position: absolute;
+        top: calc(100% + 7px);
+        right: 0;
+        z-index: 50;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        box-shadow: 0 14px 36px rgba(15, 23, 42, 0.16);
+        padding: 6px;
+        min-width: 210px;
+        display: none;
+    }
+    .menu.up {
+        top: auto;
+        bottom: calc(100% + 7px);
+    }
+    .menu.open {
+        display: block;
+        animation: pop 0.12s ease;
+    }
+    @keyframes pop {
+        from {
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+    .mi {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        width: 100%;
+        text-align: left;
+        border: none;
+        background: none;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-2);
+        padding: 9px 10px;
+        border-radius: 7px;
+        cursor: pointer;
+        letter-spacing: -0.01em;
+    }
+    .mi:hover {
+        background: #f1f5f9;
+        color: var(--ink);
+    }
+    .mi.danger {
+        color: var(--red);
+    }
+    .mi.danger:hover {
+        background: #fef2f2;
+    }
+    .mi svg {
+        flex: 0 0 auto;
+        opacity: 0.85;
+    }
+    .mi.mi-2 {
+        align-items: center;
+        gap: 12px;
+        padding: 11px 12px;
+    }
+    .mi.mi-2 svg {
+        margin-top: 0;
+        color: var(--ink-2);
+        width: 22px;
+        height: 22px;
+    }
+    .mi-tx {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+    .mi-tx b {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink);
+    }
+    .mi-tx i {
+        font-size: 11.5px;
+        font-style: normal;
+        line-height: 1.45;
+        color: var(--ink-3);
+    }
+    #menu-copy {
+        min-width: 288px;
+    }
+    .menu-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--ink-3);
+        padding: 7px 10px 4px;
+        letter-spacing: 0.02em;
+    }
+    .menu-div {
+        height: 1px;
+        background: var(--line-soft);
+        margin: 5px 2px;
+    }
+
+    /* 공유·내보내기 패널 */
+    .menu.wide {
+        width: 320px;
+        padding: 10px;
+    }
+    .dl-row {
+        display: flex;
+        gap: 8px;
+    }
+    .dl-row .mi {
+        flex: 1;
+        justify-content: center;
+        border: 1px solid var(--line);
+    }
+    .share-note {
+        font-size: 11.5px;
+        line-height: 1.5;
+        color: var(--amber);
+        background: #fbf3e5;
+        border-radius: 8px;
+        padding: 8px 10px;
+        margin: 2px 2px 8px;
+    }
+    .share-docs {
+        padding: 2px 2px 4px;
+    }
+    .doc-chk {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 7px 8px;
+        border-radius: 7px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink);
+    }
+    .doc-chk:hover {
+        background: #f1f5f9;
+    }
+    .doc-chk input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--teal);
+        cursor: pointer;
+    }
+    .gen-link {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        justify-content: flex-start;
+        background: none;
+        color: var(--navy);
+        border: none;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 10px 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 2px;
+    }
+    .gen-link svg {
+        flex: 0 0 auto;
+    }
+    .gen-link:hover {
+        background: #eef2f6;
+    }
+    .gen-link:disabled {
+        color: var(--ink-3);
+        cursor: default;
+    }
+    .gen-link:disabled:hover {
+        background: none;
+    }
+    .links {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .link-card {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 11px;
+    }
+    .link-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .link-url {
+        font-size: 12px;
+        color: var(--ink-2);
+        font-family: ui-monospace, monospace;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
+    }
+    .link-copy {
+        flex: 0 0 auto;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink-2);
+        padding: 6px;
+        border-radius: 7px;
+        cursor: pointer;
+        display: inline-flex;
+    }
+    .link-copy:hover {
+        background: var(--surface-2);
+        border-color: #cbd5e1;
+    }
+    .link-exp {
+        font-size: 11.5px;
+        color: var(--ink-3);
+        margin-top: 8px;
+    }
+    .revoke-mi {
+        color: var(--red) !important;
+    }
+    .revoke-mi:hover {
+        background: #fef2f2 !important;
+    }
+    .menu-div {
+        height: 1px;
+        background: var(--line-soft);
+        margin: 8px 2px;
+    }
+    .send-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .send-row .send-mi {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .recip-sel {
+        flex: 0 0 auto;
+        margin-right: 6px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 5px 8px;
+        background: #fff;
+        cursor: pointer;
+    }
+    .recip-sel:focus {
+        outline: none;
+        border-color: var(--teal);
+    }
+
+    /* ── 모달 ── */
+    .overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.34);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 80;
+    }
+    .overlay.open {
+        display: flex;
+    }
+    .modal {
+        width: 430px;
+        max-width: 88%;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.3);
+        padding: 22px;
+    }
+    .modal h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--navy);
+        margin-bottom: 7px;
+    }
+    .modal p {
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--ink-2);
+    }
+    .modal textarea {
+        width: 100%;
+        margin-top: 13px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 11px 13px;
+        font: inherit;
+        font-size: 13px;
+        resize: none;
+        min-height: 104px;
+        color: var(--ink);
+    }
+    .modal textarea:focus {
+        outline: none;
+        border-color: var(--teal);
+    }
+    .warn {
+        display: flex;
+        gap: 9px;
+        background: #fef2f2;
+        border: 1px solid #f3c9c9;
+        border-radius: 9px;
+        padding: 11px 12px;
+        margin-top: 13px;
+        font-size: 12.5px;
+        line-height: 1.55;
+        color: #8a2020;
+    }
+    .warn svg {
+        flex: 0 0 auto;
+        margin-top: 1px;
+    }
+    .help {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 13px;
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--ink-3);
+    }
+    .help svg {
+        flex: 0 0 auto;
+    }
+    .plan-list {
+        margin-top: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+    }
+    .plan-opt {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 11px 13px;
+        cursor: pointer;
+    }
+    .plan-opt:hover {
+        background: var(--surface-2);
+    }
+    .plan-opt.sel {
+        border-color: var(--teal);
+        background: #eff4fe;
+    }
+    .plan-opt .radio {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid #cbd5e1;
+        flex: 0 0 auto;
+    }
+    .plan-opt.sel .radio {
+        border-color: var(--teal);
+        background: radial-gradient(circle, var(--teal) 42%, transparent 46%);
+    }
+    .plan-opt .pi-name {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--ink);
+    }
+    .plan-opt .pi-sub {
+        font-size: 11.5px;
+        color: var(--ink-3);
+        margin-left: auto;
+    }
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 20px;
+    }
+    .modal-actions.del-actions {
+        justify-content: space-between;
+    }
+    .mbtn {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink-2);
+        font-size: 13px;
+        font-weight: 600;
+        padding: 9px 16px;
+        border-radius: 9px;
+        cursor: pointer;
+    }
+    .mbtn:hover {
+        background: var(--surface-2);
+    }
+    .mbtn.primary {
+        background: var(--navy);
+        border-color: var(--navy);
+        color: #fff;
+    }
+    .mbtn.primary:hover {
+        background: #16314d;
+    }
+    .mbtn.danger {
+        background: var(--red);
+        border-color: var(--red);
+        color: #fff;
+    }
+    .mbtn.danger:hover {
+        background: #9c1717;
+    }
+
+    /* 토스트 */
+    .toasts {
+        position: absolute;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 90;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+    }
+    .toast {
+        background: var(--navy);
+        color: #fff;
+        font-size: 12.5px;
+        font-weight: 600;
+        padding: 9px 15px;
+        border-radius: 999px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+        animation: tin 0.2s ease;
+    }
+    @keyframes tin {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+</style>
+
+<div class="panel" id="panel">
+    <!-- 헤더 -->
+    <div class="head">
+        <button class="back" id="back">
+            <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <path d="M15 6l-6 6 6 6" />
+            </svg>
+            목록
+        </button>
+        <div class="head-meta">
+            <span class="head-date">2026.03.23 오후 6:16</span>
+            <span class="head-counselor">안실장</span>
+        </div>
+
+        <div class="head-actions">
+            <!-- 내보내기 (현재 탭) -->
+            <div class="hwrap">
+                <button class="hbtn" data-menu="export">
+                    <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6" />
+                        <path d="M12 3v13M7 8l5-5 5 5" />
+                    </svg>
+                    내보내기
+                </button>
+                <div class="menu" id="menu-export">
+                    <div class="share-docs" id="export-docs">
+                        <div class="menu-label">내보낼 문서</div>
+                        <label class="doc-chk"
+                            ><input type="checkbox" data-doc="script" checked /><span>대화 기록</span></label
+                        >
+                        <label class="doc-chk"
+                            ><input type="checkbox" data-doc="summary" checked /><span>요약</span></label
+                        >
+                        <label class="doc-chk"
+                            ><input type="checkbox" data-doc="coach" checked /><span>상담 도우미</span></label
+                        >
+                    </div>
+                    <div class="menu-div"></div>
+                    <button class="mi mi-2" data-act="dl-pdf">
+                        <svg
+                            width="17"
+                            height="17"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <path d="M14 2v6h6" />
+                        </svg>
+                        <span class="mi-tx"><b>PDF로 내보내기</b></span>
+                    </button>
+                    <button class="mi mi-2" data-act="dl-txt">
+                        <svg
+                            width="17"
+                            height="17"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <path d="M14 2v6h6" />
+                            <path d="M8 13h8M8 17h5" />
+                        </svg>
+                        <span class="mi-tx"><b>TXT로 내보내기</b></span>
+                    </button>
+                    <button class="mi mi-2" data-act="email">
+                        <svg
+                            width="17"
+                            height="17"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <rect x="3" y="5" width="18" height="14" rx="2" />
+                            <path d="m3 7 9 6 9-6" />
+                        </svg>
+                        <span class="mi-tx"><b>이메일로 내보내기</b></span>
+                    </button>
+                </div>
+            </div>
+            <!-- 공유 (외부 링크) -->
+            <div class="hwrap">
+                <button class="hbtn" data-menu="share">
+                    <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                    </svg>
+                    링크
+                </button>
+                <div class="menu wide" id="menu-share">
+                    <div class="share-docs" id="share-docs">
+                        <div class="menu-label">공유할 문서</div>
+                        <label class="doc-chk"
+                            ><input type="checkbox" data-doc="script" checked /><span>대화 기록</span></label
+                        >
+                        <label class="doc-chk"
+                            ><input type="checkbox" data-doc="summary" checked /><span>요약</span></label
+                        >
+                        <label class="doc-chk"
+                            ><input type="checkbox" data-doc="coach" checked /><span>상담 도우미</span></label
+                        >
+                    </div>
+                    <button class="gen-link" id="gen-link">
+                        <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8" /></svg
+                        >외부 링크 생성하기
+                    </button>
+                    <div class="links" id="links"></div>
+                </div>
+            </div>
+
+            <!-- 더보기 -->
+            <div class="hwrap">
+                <button class="hbtn icon" data-menu="more" title="더보기">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="5" r="1.7" />
+                        <circle cx="12" cy="12" r="1.7" />
+                        <circle cx="12" cy="19" r="1.7" />
+                    </svg>
+                </button>
+                <div class="menu" id="menu-more">
+                    <button class="mi" data-act="retranscribe">
+                        <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                            <path d="M21 3v5h-5" />
+                            <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                            <path d="M3 21v-5h5" /></svg
+                        ><b>대화기록 다시 작성</b>
+                    </button>
+                    <button class="mi" data-act="reassign">
+                        <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" />
+                            <path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" /></svg
+                        ><b>치료계획 연결 변경</b>
+                    </button>
+                    <div class="menu-div"></div>
+                    <button class="mi danger" data-act="delete">
+                        <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+                            /></svg
+                        ><b>상담내역 삭제</b>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 탭 -->
+    <div class="tabs">
+        <button class="tab" data-tab="summary">요약<span class="stale-dot"></span></button>
+        <button class="tab active" data-tab="script">대화 기록</button>
+        <button class="tab" data-tab="coach">상담 도우미<span class="stale-dot"></span></button>
+        <div class="tabs-right" id="tabs-right">
+            <!-- 복사 (현재 탭) -->
+            <div class="hwrap">
+                <button class="hbtn" data-menu="copy">
+                    <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <rect x="9" y="9" width="11" height="11" rx="2" />
+                        <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+                    </svg>
+                    복사
+                </button>
+                <div class="menu" id="menu-copy">
+                    <button class="mi mi-2" data-act="copy-text">
+                        <svg
+                            width="17"
+                            height="17"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <path d="M14 2v6h6" />
+                            <path d="M8 13h8M8 17h5" />
+                        </svg>
+                        <span class="mi-tx"><b>텍스트로 복사</b><i>텍스트만 복사합니다.</i></span>
+                    </button>
+                    <button class="mi mi-2" data-act="copy-md">
+                        <svg
+                            width="17"
+                            height="17"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <rect x="3" y="5" width="18" height="14" rx="2" />
+                            <path d="M7 15V9l3 3 3-3v6" />
+                            <path d="M17 9v4M15 11l2 2 2-2" />
+                        </svg>
+                        <span class="mi-tx"
+                            ><b>마크다운으로 복사</b
+                            ><i>LLM, Notion 등에 호환되는 표준 마크다운 형식으로 복사합니다.</i></span
+                        >
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 전사 -->
+    <div class="pane active" id="pane-script"></div>
+
+    <!-- 요약 -->
+    <div class="pane" id="pane-summary">
+        <div class="doc">
+            <div class="stale" id="stale-summary">
+                <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M12 9v4M12 17h.01" />
+                    <path d="M10.3 3.3 1.7 18a2 2 0 0 0 1.7 3h17.2a2 2 0 0 0 1.7-3L13.7 3.3a2 2 0 0 0-3.4 0z" />
+                </svg>
+                전사 내용이 수정되었습니다. 요약을 다시 생성할 수 있습니다.
+                <button class="regen" data-regen="summary">다시 생성</button>
+            </div>
+            <div class="sec">
+                <h3>상담 흐름</h3>
+                <p>
+                    우측 상악 구치부 아말감 수복물에 대한 재치료 상담. 사진·엑스레이를 보며 인레이와 크라운 옵션, 재료별
+                    비용, MTA 진정약제 및 신경치료 가능성을 설명했고, 환자가 우측 상악 두 치아의 당일 치료를 결정.
+                </p>
+            </div>
+            <div class="sec">
+                <h3>환자 주소 (C.C.)</h3>
+                <p>기존 아말감 부위의 불편감, 충치 의심.</p>
+            </div>
+            <div class="sec">
+                <h3>핵심 내용</h3>
+                <div class="facts">
+                    <div class="fact"><span class="k">인레이</span><span class="v">이맥스 30만 · 금 40만</span></div>
+                    <div class="fact">
+                        <span class="k">크라운</span><span class="v">지르코니아 50만 · 금 65만</span>
+                    </div>
+                    <div class="fact">
+                        <span class="k">MTA 진정약제 <span style="color: var(--ink-3)">(비급여)</span></span
+                        ><span class="v">10만</span>
+                    </div>
+                    <div class="fact"><span class="k">코어(레진 보강)</span><span class="v">5만 · 원장 DC</span></div>
+                    <div class="fact note"><span class="k">신경치료 전환 시 약 한 달 ~ 한 달 반 소요</span></div>
+                    <div class="fact note"><span class="k">환자는 금 대신 치아색(지르코니아) 보철 선호</span></div>
+                </div>
+            </div>
+            <div class="sec">
+                <h3>환자 반응</h3>
+                <p>재료·비용 차이를 구체적으로 질문하며 적극적. 당초 경과 관찰하기로 했던 치아까지 당일 치료를 희망.</p>
+            </div>
+            <div class="sec">
+                <h3>도달점 및 과제</h3>
+                <p>
+                    우측 상악 2개 치아 당일 치료 동의(MTA 비용은 한 개분만 DC 적용), 마취 후 진행. 증상 경과에 따라
+                    일주일 후 본뜨기 가능. 반대편 동일 양상 치아는 추후 상담 필요.
+                </p>
+            </div>
+            <div class="sec">
+                <h3>분류</h3>
+                <div class="chips">
+                    <span class="chip">DISC · C(신중형)</span><span class="chip">비용·옵션 설명 중심</span
+                    ><span class="chip">협조적 상담</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 코칭 -->
+    <div class="pane" id="pane-coach">
+        <div class="doc">
+            <div class="stale" id="stale-coach">
+                <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M12 9v4M12 17h.01" />
+                    <path d="M10.3 3.3 1.7 18a2 2 0 0 0 1.7 3h17.2a2 2 0 0 0 1.7-3L13.7 3.3a2 2 0 0 0-3.4 0z" />
+                </svg>
+                전사 내용이 수정되었습니다. 코칭을 다시 생성할 수 있습니다.
+                <button class="regen" data-regen="coach">다시 생성</button>
+            </div>
+            <div class="sec">
+                <h3>우수 포인트</h3>
+                <div class="point">
+                    <div class="pt-h"><span class="pt-n">1</span>비유를 통한 직관적 설명</div>
+                    <div class="row">
+                        ‘마른 나무처럼 푸석푸석’, ‘퍼즐처럼 본떠서’ 등 비유로 비전문가가 치아 구조·예후를 그림처럼
+                        이해하도록 도움.
+                    </div>
+                </div>
+                <div class="point">
+                    <div class="pt-h"><span class="pt-n">2</span>옵션·비용의 단계적 제시</div>
+                    <div class="row">
+                        인레이 → 크라운 → MTA·코어까지 재료별 가격을 빠짐없이 안내해 선택지를 명확히 함.
+                    </div>
+                </div>
+                <div class="point">
+                    <div class="pt-h"><span class="pt-n">3</span>위험·불가역성의 선제 고지</div>
+                    <div class="row">
+                        신경 노출·신경치료 전환·치아 삭제 불가역성을 미리 설명해 추후 분쟁 소지를 줄임.
+                    </div>
+                </div>
+                <div class="point">
+                    <div class="pt-h"><span class="pt-n">4</span>환자 질문에 즉시 명료한 응답</div>
+                    <div class="row">금 부분보철 가능 여부, 치아색 교체 가능 여부 등에 막힘없이 답해 신뢰를 높임.</div>
+                </div>
+            </div>
+
+            <div class="sec">
+                <h3>개선 포인트</h3>
+                <div class="point bad">
+                    <div class="pt-h"><span class="pt-n">1</span>정보 과부하 · 중간 확인 부재</div>
+                    <div class="pt-line">
+                        <span class="pt-tag obs">관찰</span
+                        ><span>긴 설명이 이어지는 동안 환자 응답이 대부분 “네”에 머묾.</span>
+                    </div>
+                    <div class="pt-alt">
+                        <span class="pt-tag alt">대체 표현</span
+                        ><span
+                            >“여기까지 이해되셨을까요? 인레이랑 크라운 차이가 헷갈리실 수 있는데, 궁금한 점
+                            있으세요?”</span
+                        >
+                    </div>
+                    <div class="quote">
+                        "여기까지 질문 있으세요?" 류의 확인이 거의 없음
+                        <span class="jump" data-jump>전사에서 보기</span>
+                    </div>
+                </div>
+                <div class="point bad">
+                    <div class="pt-h"><span class="pt-n">2</span>비용 정보의 산발적 전달</div>
+                    <div class="pt-line">
+                        <span class="pt-tag obs">관찰</span
+                        ><span>이맥스 30만, 금 40만, 지르코니아 50만, MTA 10만 등이 설명 흐름 속에 흩어져 등장.</span>
+                    </div>
+                    <div class="pt-alt">
+                        <span class="pt-tag alt">대체 표현</span
+                        ><span
+                            >“정리하면 인레이는 30~40만 원, 크라운은 50~65만 원, 신경 약제를 쓰면 10만 원이 더해질 수
+                            있어요.”</span
+                        >
+                    </div>
+                    <div class="quote">
+                        "금 같은 경우는 40만 원이에요…" <span class="jump" data-jump>전사에서 보기</span>
+                    </div>
+                </div>
+                <div class="point bad">
+                    <div class="pt-h"><span class="pt-n">3</span>원장 소견과 직원 설명의 간극</div>
+                    <div class="pt-line">
+                        <span class="pt-tag obs">관찰</span
+                        ><span>“원장님은 지켜봐도 될 것 같다”와 “사진상으로는 애매하다”가 함께 전달됨.</span>
+                    </div>
+                    <div class="pt-alt">
+                        <span class="pt-tag alt">대체 표현</span
+                        ><span
+                            >“육안으로는 경과 관찰도 가능하지만, 엑스레이상 2차 우식이 의심돼 원하시면 오늘 확인하는
+                            것도 방법이에요.”</span
+                        >
+                    </div>
+                    <div class="quote">
+                        "원장님은 눈으로… 지켜보셔도 될 거 같아요 하셨는데"
+                        <span class="jump" data-jump>전사에서 보기</span>
+                    </div>
+                </div>
+                <div class="point bad">
+                    <div class="pt-h"><span class="pt-n">4</span>클로징 단계의 압축</div>
+                    <div class="pt-line">
+                        <span class="pt-tag obs">관찰</span
+                        ><span>치료 결정 직후 마취·기간·증상 관찰·DC 조건이 한꺼번에 빠르게 전달됨.</span>
+                    </div>
+                    <div class="pt-alt">
+                        <span class="pt-tag alt">대체 표현</span
+                        ><span
+                            >“오늘 마취하고 약재까지 덮고, 일주일 뒤 증상 보고 본을 떠요. 비용은 두 개 함께라 약재비 한
+                            번만 받을게요. 이렇게 진행해도 될까요?”</span
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <div class="sec">
+                <h3>SWOT</h3>
+                <div class="swot">
+                    <div class="q s">
+                        <h4>Strengths</h4>
+                        <p>비유 중심의 이해하기 쉬운 설명, 재료·비용의 빠짐없는 안내, 위험의 선제 고지, 질문 대응력.</p>
+                    </div>
+                    <div class="q w">
+                        <h4>Weaknesses</h4>
+                        <p>정보 과부하와 중간 확인 부족, 비용의 산발적 전달, 원장·직원 메시지 간극, 클로징 압축.</p>
+                    </div>
+                    <div class="q o">
+                        <h4>Opportunities</h4>
+                        <p>높은 치료 의지로 추가 진료 연결 용이, 반대편 동일 양상 치아 후속 상담 가능.</p>
+                    </div>
+                    <div class="q t">
+                        <h4>Threats</h4>
+                        <p>흩어진 비용 설명에 따른 수납 단계 이의 가능성, 신경치료 전환 시 기간·비용 증가 불만 소지.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sec">
+                <h3>Action Plan</h3>
+                <div class="point">
+                    <div class="pt-h"><span class="pt-n">1</span>비용 시나리오 카드화</div>
+                    <div class="row">인레이/크라운/약제 조합별 총액을 한 장으로 정리해 상담 중 제시.</div>
+                </div>
+                <div class="point">
+                    <div class="pt-h"><span class="pt-n">2</span>중간 확인 습관화</div>
+                    <div class="row">주요 단락마다 “여기까지 괜찮으세요?” 확인 질문을 삽입.</div>
+                </div>
+                <div class="point">
+                    <div class="pt-h"><span class="pt-n">3</span>메시지 정렬</div>
+                    <div class="row">원장 소견과 직원 설명을 사전에 통일해 일관된 표현으로 전달.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 오디오바 (대화 기록 탭 하단에 구조적으로 위치 — 위 전사가 스크롤) -->
+    <div class="audio">
+        <button class="pp" id="pp" title="재생/일시정지"></button>
+        <div class="track-wrap">
+            <div class="track" id="track">
+                <div class="bar">
+                    <div class="fill" id="fill"></div>
+                    <div class="knob" id="knob"></div>
+                </div>
+            </div>
+            <span class="time" id="time">0:00 / 13:51</span>
+        </div>
+        <div class="audio-tools">
+            <span class="vol">
+                <button class="mute-btn" id="mute" title="음소거"></button>
+                <input type="range" min="0" max="100" value="80" id="vol" />
+            </span>
+            <div class="swrap">
+                <button class="speed" data-menu="speed" id="speed-btn"><span id="speed-label">1×</span></button>
+                <div class="menu up" id="menu-speed" style="min-width: 84px">
+                    <button class="mi" data-spd="1">1×</button>
+                    <button class="mi" data-spd="1.25">1.25×</button>
+                    <button class="mi" data-spd="1.5">1.5×</button>
+                    <button class="mi" data-spd="2">2×</button>
+                </div>
+            </div>
+            <button class="aud-dl" data-act="dl-audio" title="오디오 파일 다운로드">
+                <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M12 3v12M7 10l5 5 5-5" />
+                    <path d="M5 21h14" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- 모달들 -->
+    <div class="overlay" id="overlay">
+        <!-- 재전사 -->
+        <div class="modal" id="modal-retr" style="display: none">
+            <h3>대화기록 다시 작성</h3>
+            <p>원본 음성으로 대화기록을 다시 작성합니다. 추가로 반영할 요청이 있다면 적어주세요.</p>
+            <textarea
+                id="retr-prompt"
+                spellcheck="false"
+                placeholder="예: 의학 용어 옆에 환자용 쉬운 표현을 함께 적어줘 / 군더더기 추임새는 정리해줘"
+            ></textarea>
+            <div class="help">
+                <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#B45309"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M12 9v4M12 17h.01" />
+                    <path d="M10.3 3.3 1.7 18a2 2 0 0 0 1.7 3h17.2a2 2 0 0 0 1.7-3L13.7 3.3a2 2 0 0 0-3.4 0z" />
+                </svg>
+                <span
+                    >그동안의 화자 교정·편집·나누기 내역은 사라지고, 요약과 상담 도우미도 자동으로 다시
+                    생성됩니다.</span
+                >
+            </div>
+            <div class="modal-actions">
+                <button class="mbtn" data-close>취소</button
+                ><button class="mbtn primary" data-act="do-retr">다시 작성</button>
+            </div>
+        </div>
+
+        <!-- 치료계획 재지정 -->
+        <div class="modal" id="modal-plan" style="display: none">
+            <h3>치료계획 연결 변경</h3>
+            <p>
+                이 녹음이 연결된 치료계획을 변경합니다. 녹음 시작 시점에 캡처된 연결을 다른 계획으로 다시 묶을 수
+                있습니다.
+            </p>
+            <div class="plan-list" id="plan-list">
+                <div class="plan-opt sel" data-plan="0">
+                    <span class="radio"></span><span class="pi-name">상악 임플란트</span
+                    ><span class="pi-sub">2026-03-23 · 진행중 (현재)</span>
+                </div>
+                <div class="plan-opt" data-plan="1">
+                    <span class="radio"></span><span class="pi-name">하악 좌측 보철</span
+                    ><span class="pi-sub">2026-05-18 · 예정</span>
+                </div>
+                <div class="plan-opt" data-plan="2">
+                    <span class="radio"></span><span class="pi-name">전악 스케일링·검진</span
+                    ><span class="pi-sub">2026-02-15 · 종결</span>
+                </div>
+                <div class="plan-opt" data-plan="3">
+                    <span class="radio"></span><span class="pi-name">연결 해제</span
+                    ><span class="pi-sub">어느 계획에도 연결 안 함</span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="mbtn" data-close>취소</button
+                ><button class="mbtn primary" data-act="do-plan">적용</button>
+            </div>
+        </div>
+
+        <!-- 삭제 -->
+        <div class="modal" id="modal-del" style="display: none">
+            <h3>상담내역 삭제</h3>
+            <p>이 상담내역을 삭제하시겠습니까? 이 작업은 되돌릴 수 없어요.</p>
+            <div class="modal-actions del-actions">
+                <button class="mbtn" data-close>취소</button><button class="mbtn danger" data-act="do-del">삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toasts" id="toasts"></div>
+</div>
+
+<script>
+    /* ===== 데이터: A=치과측(우측), B=환자측(좌측). t=녹음 시작 후 경과초 ===== */
+    let turns = [
+        { s: 'A', t: 0, x: '비용 설명 자리에서 드릴 거고요.' },
+        { s: 'B', t: 3, x: '네.' },
+        {
+            s: 'A',
+            t: 4,
+            x: '우선은 인레이 좀 가능하고 이제 사진 보면서 설명드릴 건데, 원장님께서도 어쨌든 이 치아는 좀 크라운을 하는 게 낫다고 말씀드리는 우선적인 이유가 이제 기존 아말감 범위가 굉장히 넓어요. 그리고 뒤쪽도 한 여기부터 여기까지는 머리가 다 사라질 걸로 보이거든요, 충치 때문에.',
+        },
+        { s: 'B', t: 23, x: '네.' },
+        {
+            s: 'A',
+            t: 24,
+            x: '그래서 쉽게 말하면 머리가 한 요만큼만 남게 될 거예요. 요거는 다 충치 때문에 머리를 날리게 될 거고. 그렇게 보면은 이제 부분 보철이 들어갔을 때 어쨌든 보철이 잘 유지가 되려면 요렇게 보철보다 남은 본인 치아가 좀 많아야 안정적으로 유지가 되거든요.',
+        },
+        { s: 'B', t: 42, x: '네.' },
+        {
+            s: 'A',
+            t: 43,
+            x: '근데 보철 범위가 치아보다 커질 경우에는 이제 어떤 문제가 생기냐면 남은 본인 치아가 깨져 나갈 수가 있어요. 하중을 받거나 보철은 멀쩡하게 붙어 있는데 여기가 갑자기 와그작 부서져서 치아가 댕강 떨어져 나간다든가.',
+        },
+        { s: 'B', t: 58, x: '네.' },
+        {
+            s: 'A',
+            t: 59,
+            x: "치아가 쪼개진다든가 요런 문제가 발생할 수 있어서요. 그리고 이제 요런 뒤쪽 같은 경우는 특히나 이 목구멍 쪽으로 해서 관리가 원래도 좀 잘 안 되는 어려운 부분이에요. 특히나 여기 뒤쪽이랑 여기 볼 살이 겹쳐지는 여기는 원래도 관리가 좀 어려운 부분인데, 부분 보철을 하게 되면은 요런 식으로 해서 보철이 아마 그냥 요렇게 들어갈 가능성이 높거든요. 아니면 치료 중간에라도 원장님께서 '아 요거는 충치가 너무 깊어서 안 될 수 있습니다'라고 하셔서, 환자분께서 인레이를 선택하셔도.",
+        },
+        { s: 'B', t: 91, x: '네.' },
+        {
+            s: 'A',
+            t: 92,
+            x: '치료가 불가능할 수도 있어요. 만약에 인레이로 치료를 한다 하더라도 요렇게 될 경우에는 이제 보철 경계 부위로 관리가 안 된다면 또 추가적으로 2차 충치가 생길 가능성이 있다는 거를 알고서 치료를 진행하셔야 돼요.',
+        },
+        { s: 'B', t: 108, x: '네.' },
+        {
+            s: 'A',
+            t: 109,
+            x: '인레이 같은 경우는 아까 보셨던 것처럼 부분적으로 퍼즐처럼 치아를 본떠서 들어가는 게 인레이 치료고요. 인레이 같은 경우는 재료를 저희가 두 가지 사용하고 있어요. 하나는 쉽게 말해서 치아색 나는 거고요.',
+        },
+        { s: 'B', t: 124, x: '네.' },
+        {
+            s: 'A',
+            t: 125,
+            x: '세라믹 인레이의 한 종류인 이맥스라고 부르는 인레이를 사용하고 있고요. 그리고 하나는 하셨던 것처럼 금. 이렇게 두 가지 있어요. 비용 같은 경우는 요 이맥스 인레이, 치아색 나는 인레이가 30만 원이고요.',
+        },
+        { s: 'B', t: 138, x: '네.' },
+        {
+            s: 'A',
+            t: 139,
+            x: '금 같은 경우는 40만 원이에요. 이제 문제는 요 아말감을 제거하고 이 속에 있는 충치를 제거했을 때 신경까지 이미 다 썩어 있는 경우도 있거든요. 특히나 오래된 아말감 같은 경우는 치아랑 완전히 밀폐가 되는 형식의 재료가 아니다 보니까, 요런 틈바구니로 충치가 아까 보여드렸던 사진처럼 생기는 경우가 굉장히 많은데 예전에 때워 놓으신 것도 범위가 상당히 깊어요. 치아가 있으면 이 안에 신경이 들어 있는데 신경이 요런 식으로 생겼거든요.',
+        },
+        { s: 'B', t: 170, x: '네.' },
+        {
+            s: 'A',
+            t: 171,
+            x: '그냥 평평하게 있는 게 아니라 약간 뿔처럼 솟아 있는 게 신경 모양이 요렇게 생겼어요. 근데 사진상에서도 사실 보면은 여기가 조금 까맣게 보이는 부분들이 있거든요, 이 속으로.',
+        },
+        { s: 'B', t: 183, x: '네, 네.' },
+        {
+            s: 'A',
+            t: 185,
+            x: '그래서 실제로 충치가 딱 요 까맣게 보이는 부분만 있는 게 아니라, 충치는 약간 번지듯이 퍼지듯이 생기는 게 충치라서요.',
+        },
+        { s: 'B', t: 194, x: '네.' },
+        {
+            s: 'A',
+            t: 195,
+            x: '이제 치아가 여러 구조로 되어 있는데 겉에는 제일 단단한 층으로 되어 있고요. 요런 식으로 요 경계 부위가 살짝 보일 거예요. 여기가 제일 단단한 층이고 그 다음이 신경과 요 사이가 조금 더 무른 층이에요. 여기는 무기질 함량이 달라서 그런데, 겉에 제일 단단한 층에서는 충치가 생기면 커지는 데 시간이 조금 오래 걸려요. 단단한 층을 뚫는 데 오래 걸려서. 근데 여기를 딱 뚫고 들어가는 순간 갑자기 속에서 확 퍼져 버리게 되거든요. 속은 말랑말랑하다 보니까.',
+        },
+        { s: 'B', t: 227, x: '네.' },
+        {
+            s: 'A',
+            t: 228,
+            x: '충치가 확 커지게 되는 경우가 많아서 실제로 충치를 제거했을 때 딱 여기만 있냐 하면 대부분은 그렇지 않고 이 주변까지 변색이 다 있을 가능성이 높아요. 물론 제일 새카맣게 썩어 있는 곳은 여길지라도, 요렇게 된 게 건강한 치아 색상인데 완전 새카만 부분이 있고 약간 갈색빛 도는 부분도 다 충치예요. 그래서 제일 새카만 부분을 제거해도 요렇게 조금 갈색으로 변색된 부분들도 다 충치기 때문에 고런 것까지 다 제거를 한다 했을 때 신경까지 이미 닿아 버리거나 노출되기 직전이거나 노출이 되어 버리는 경우가 있거든요.',
+        },
+        {
+            s: 'A',
+            t: 265,
+            x: '그래서 예전에는 신경이 바로 뚫리게 되면 신경치료를 하고 크라운 치료를 하고 요런 식으로 진행을 했었는데, 신경치료는 어쨌든 치아에 할 수 있는 마지막 치료기 때문에 피할 수 있으면 최대한 피해서 해 보는 게 좋아요. 그래서 요즘 개발된 재료 중에 MTA라고 하는 재료가 있는데 요거는 신경을 보호하고 진정시키는 진정 약제예요.',
+        },
+        { s: 'B', t: 287, x: '아.' },
+        {
+            s: 'A',
+            t: 288,
+            x: '요거를 이제 사용을 해 볼 수가 있는데 물론 선택 사항이에요. 좋은 재료지만 비급여 진료 재료이기 때문에 요거를 사용하게 될 경우에 비용이 10만 원 별도로 발생을 하게 되거든요.',
+        },
+        { s: 'B', t: 300, x: '아, 신경치료를 안 하고...' },
+        {
+            s: 'A',
+            t: 302,
+            x: '안 하고 요거는 쉽게 말하면 신경이 거의 노출되기 직전이나 살짝 노출이 되더라도 약을 넣어서 수리해서 쓰는 거라고 보시면 돼요. 이 약재가 무조건 100% 나아지는 건 아니기 때문에 쓰더라도, 보통 열 분 중에 아홉 분 정도는 안 아프고 괜찮아서 그대로 보존적인 방법으로 신경을 남겨 두고서 치료를 하게 되는데, 크라운 치료를 한다 하더라도 어쨌든 신경을 남겨 두고 치료하는 게 좋거든요.',
+        },
+        { s: 'B', t: 328, x: '네, 네.' },
+        {
+            s: 'A',
+            t: 330,
+            x: '신경이라는 것 자체가 치아에 영양분과 수분을 공급하는 역할을 하기 때문에, 신경치료는 신경을 다 없애버리는 게 신경치료예요. 안을 하얗게 신경을 다 없애는 게 신경치료라서.',
+        },
+        { s: 'B', t: 343, x: '네.' },
+        {
+            s: 'A',
+            t: 344,
+            x: '요렇게 신경치료를 하게 된 치아는 영양분과 수분이 공급되지 않기 때문에 마른 나무가 죽으면 푸석푸석하게 마르는 것처럼 똑같이 건조하고 마르게 돼서 약해지게 되고요. 또 신경치료가 된 치아는 아프거나 불편한 걸 잘 못 느끼기 때문에, 크라운을 씌워 놨더라도 그 밑으로 문제가 생겨 썩어서 부러지기 전까지 모르는 경우도 많아요. 그래서 여러 가지 이유로 신경치료는 피할 수 있으면 피하는 게 좋아서 요런 방법을 써 볼 수 있다 말씀드리는 거고, 열 분 중에 한 분 정도는 약재를 쓰더라도 아프고 시리고 불편해서 어쩔 수 없이 신경치료로 들어가게 되는 경우도 있기는 해요.',
+        },
+        { s: 'B', t: 385, x: '네.' },
+        {
+            s: 'A',
+            t: 386,
+            x: '네, 요거는 무조건 써야 된다는 건 아니고 충치 특성상 제거했을 때 번져 있어서 신경까지 닿는 경우가 있기 때문에 그럴 경우에는 신경치료를 들어가거나 아니면 요런 재료를 써서 한 번 시도를 해 볼 수 있다 이렇게 말씀드리는 거예요. 물론 요거를 했다가 신경치료로 변경되는 경우에는 어쩔 수 없이 치료 기간이나 진료비가 추가적으로 나올 수는 있지만, 어쨌든 신경치료를 하면 한 달 정도 기간이 더 추가적으로 소요가 되거든요.',
+        },
+        { s: 'B', t: 414, x: '네.' },
+        {
+            s: 'A',
+            t: 415,
+            x: '신경치료가 한 번에 끝나는 치료가 아니라 세 번에서 네 번 정도 진행을 하게 되고 일주일 간격으로 내원을 하기 때문에 한 달 정도 걸리고요. 신경치료를 하면 치아가 약해지기 때문에 크라운 치료를 무조건 하셔야 돼요. 지금 상태는 뭐 인레이를 해 볼 수 있지만 크라운 가능성이 높은 상태인 거고, 신경치료를 하게 되면 크라운 치료까지 한 달에서 한 달 반 정도 소요가 된다고 보시면 돼요. 만약에 MTA라는 재료를 썼을 때 약재가 굳는 데도 시간이 걸리고 아픈지 안 아픈지 판단이 필요해서 일주일 정도 증상을 지켜보게 되거든요.',
+        },
+        { s: 'B', t: 451, x: '네.' },
+        {
+            s: 'A',
+            t: 452,
+            x: '하루 이틀 정도 아픈 건 정상이지만 그 이후로 아픈 게 없다 하시면 치아 신경 남겨놓고 본 떠서 다음 번에 보철 붙이고 치료를 진행하게 되는 거고요. 만약 처음에 아팠던 게 계속 불편감이 유지되거나 점점 아파진다고 하면 다른 방법을 써야 될 수도 있기는 해요. 우선 인레이 같은 경우는 비용이 그렇고.',
+        },
+        { s: 'B', t: 473, x: '네.' },
+        {
+            s: 'A',
+            t: 474,
+            x: '다만 뒤쪽으로 충치가 좀 심할 경우에는 치료 중간에라도 환자분이 인레이를 원하셔도 크라운으로 변경될 가능성이 있고, 인레이로 시도를 성공적으로 한다 하더라도 MTA라고 하는 재료를 써야 될 가능성이 굉장히 높은 치아예요. 만약에 크라운 치료를 하시게 될 경우에는 크라운도 인레이랑 마찬가지로 치아색 나는 거랑 금 요렇게 두 가지 있다고 보시면 돼요.',
+        },
+        { s: 'B', t: 498, x: '네.' },
+        {
+            s: 'A',
+            t: 499,
+            x: '크라운은 치아색 나는 보철이 지르코니아라고 부르는 재료고요, 그리고 금. 비용은 지르코니아가 50만 원, 금 같은 경우는 65만 원이에요. 이제 문제는 머리를 씌울 때 속에 치아가 요런 식으로 있어야 되는데, 인레이는 파서 내부에 끼워 넣는 방식이라면 크라운은 머리를 보강하는 방식이라 속에 치아를 다듬게 돼요.',
+        },
+        { s: 'B', t: 522, x: '네, 네.' },
+        { s: 'A', t: 524, x: '근데 기존의 아말감이나 충치를 제거할 경우 머리가 요런 식으로 없게 되거든요.' },
+        { s: 'B', t: 529, x: '네, 네.' },
+        {
+            s: 'A',
+            t: 531,
+            x: '이 없는 부분을 보강 재료로 다시 쌓아 올려서 머리를 만들어 줘야 크라운을 씌울 수가 있어요. 보강할 때 쓰는 재료를 레진이라는 재료를 사용하는데 요걸로 머리 쌓아 올리는 걸 코어라고 불러요. 요것도 비급여 재료이기 때문에 원래는 5만 원 별도로 발생을 하지만 원장님께서 요거는 그냥 DC 해 주신다고 하셨거든요.',
+        },
+        { s: 'B', t: 552, x: '아.' },
+        {
+            s: 'A',
+            t: 553,
+            x: '그래서 만약에 크라운 치료 하신다 하시면 지르코니아는 50만 원, 금으로 하시면 65만 원. 여기에 만약에 신경 진정 약제를 쓰게 된다면 진정 약제 비용이 나오시는 거고, 안 써도 된다 하시면 비용이 안 나오는 거예요.',
+        },
+        { s: 'B', t: 568, x: '이 진정 약제를 선택하시는 건가요?' },
+        { s: 'A', t: 571, x: '약제는요? 약제는 충치를 제거를 했을 때 보고서 원장님이 판단 하에.' },
+        { s: 'B', t: 576, x: '네.' },
+        {
+            s: 'A',
+            t: 577,
+            x: '들어가는 거예요. 근데 MTA 진정 약제도 못 쓸 정도로 바로 신경치료로 들어가는 경우도 있기는 하나, 우선은 요 재료를 써 볼 수 있는 정도거든요 지금은. 그래서 신경을 남겨놓고 치료를 할 수 있는 정도라고 보시면 되고요. 보철 같은 경우는 환자분께서 원하시는 재료를 선택하시면 돼요. 또 반대편도 동일하게 설명드린 거랑 같다고 보시면 되고, 아말감 같은 경우는 밀폐력이 좀 좋지가 않아서 이차 우식이라고 하는 틈바구니로 미세 노출이 일어나 하방으로 깊게 썩게 되는 경우가 많아서 예전에 때워놓으신 범위가 굉장히 깊거든요.',
+        },
+        { s: 'B', t: 615, x: '네.' },
+        {
+            s: 'A',
+            t: 616,
+            x: '그래서 마찬가지로 여기랑 동일하게 신경이 노출될 가능성이 굉장히 높은 치아다 이렇게 보시면 돼요. 여기는 지켜본다고 하셔서.',
+        },
+        {
+            s: 'B',
+            t: 625,
+            x: '선생님, 저기 금으로 할 때도 똑같이 부분적으로 할 수 있다고 하셨잖아요? 전체적으로 씌우는 게 아니라?',
+        },
+        { s: 'A', t: 632, x: '네.' },
+        { s: 'B', t: 633, x: '어.. 그러면 아까 금으로 했을 때 40만 원이라고 하셨나요?' },
+        {
+            s: 'A',
+            t: 637,
+            x: '네 맞아요. 40만 원. 예전에는 금보철이 사실 제일 좋은 재료다 했었던 게 맞는데 요즘은 재료가 많이 좋아져서 금으로는 어르신들 말고는 잘 하지는 않거든요. 금이 치아 삭제량이 비교적 적고 강도가 유사해서 좋긴 한데, 치아랑 접착이 되는 재료는 아니라서 오래 지나면 틈바구니로 미세 노출이 일어나 이차 우식이 생기는 경우가 많고요. 힘을 잘못 받으면 치아가 금이 가는 케이스들이 치아색 나는 보철보다 조금 더 많기는 해요.',
+        },
+        { s: 'B', t: 668, x: '아, 치아색 나는 걸로 교체해도 괜찮겠네요?' },
+        {
+            s: 'A',
+            t: 671,
+            x: '치아색 나는 걸로 교체 상관없으시고요. 완전 접착되는 재료라서 보철이 떨어지거나 하는 경우는 없고, 요즘은 재료 다 많이 좋아져서 특히나 여성분들 같은 경우는 보이는 게 신경 쓰이면 대부분 치아색으로 많이들 선택을 하세요.',
+        },
+        { s: 'B', t: 686, x: '그럼 저 오늘 치료하게 되면 할 수 있을까요?' },
+        { s: 'A', t: 689, x: '네 가능하세요.' },
+        { s: 'B', t: 691, x: '아 그러면 저 그냥 이거 오른쪽 위에 두 개 오늘 진행하고 싶은데 괜찮을까요?' },
+        { s: 'A', t: 696, x: '요것도 아까는 지켜보신다고 말씀하셨는데 그냥 치료를...' },
+        {
+            s: 'B',
+            t: 700,
+            x: '제가 볼 때 충치가 있는 거 같거든요. 뭔가 불편한 느낌이 계속 있어서 이번에는 그냥 제거를 하고 충치가 있는지 보고 다시 만들고 싶어 가지고요.',
+        },
+        {
+            s: 'A',
+            t: 709,
+            x: '아. 근데 이제 원장님은 눈으로 구강 내에서 봤을 때는 괜찮아 보여서 정기적으로 병원 다니면서 조금 더 지켜보셔도 될 거 같아요 하셨는데, 사진상으로는 예전에 치료한 게 조금 깊다고 아까도 말씀하시긴 했거든요. 딱 상태가 멀쩡하냐 하면 고거는 조금 애매해요. 엑스레이 상에서 까맣게 보이는 거는 뭔가 없으면 까맣게 보이는 거거든요. 예전에 치료할 때 인레이 하방으로 베이스라고 하는 걸 깔아놓고 치료를 하신 거 같아요. 원장님께서 2차 우식이 의심된다고 하는 이유가 엑스레이 상 주변 따라서 까맣게 보이는 것 때문에 하방으로 썩어 있을 가능성도 있다 말씀드린 거거든요. 치료를 원하셔서 말씀을 드리자면 요것도 보철 뜯어내면 밑에 있는 베이스까지 다 제거를 해야 되고요. 제거를 했을 때 신경 보호하는 약재를 쓰거나, 쓰더라도 불편함이 계속된다면 최악의 경우에는 신경치료하고 씌우는 경우까지 갈 수도 있어서 말씀을 드리는 거예요. 치아는 한 번 삭제하면 다시 복구가 되는 건 아니기 때문에 최악의 경우에는 그런 데까지 갈 가능성도 있다는 거를 조금 알고서 치료를 진행하셔야 되거든요.',
+        },
+        { s: 'B', t: 782, x: '네. 저 그냥 네 여기 두 개 그냥 같이 할게요.' },
+        { s: 'A', t: 786, x: '두 개 다 치료 진행 해 볼까요?' },
+        { s: 'B', t: 788, x: '네, 네.' },
+        {
+            s: 'A',
+            t: 790,
+            x: '치료를 하시게 되면 요거는 다시 부분 보철 가능하다고 하셨고 범위가 크지 않기 때문에 어떻게 치료를 들어갈까요? 전체 씌우는 걸로 크라운 치료로 진행을 할까요? 말씀드린 것처럼 MTA라고 하는 재료를 쓰게 될 경우에 치아당 비용이라 10만 원씩 발생하는데, 오늘 한 번에 두 개 다 치료 들어간다 하셨으니까 제가 그냥 DC 해서 한 비용만 받도록 할게요. 오늘 약재 덮게 되면 증상을 지켜보는 기간이 필요하기 때문에 일주일 있다가 본을 뜨셔야 될 수 있고요. 만약에 생각보다 괜찮다 하시면 오늘 두 개 다 본 떠서 들어갈 거예요.',
+        },
+        { s: 'B', t: 826, x: '네.' },
+        { s: 'A', t: 827, x: '오늘 마취를 그럼 하고 진행할 거라 이제 시간 되시죠?' },
+        { s: 'B', t: 831, x: '네.' },
+    ];
+
+    const TOTAL = 831;
+    const $ = s => document.querySelector(s);
+    const fmt = sec => {
+        sec = Math.max(0, Math.floor(sec));
+        return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+    };
+
+    /* ===== 토스트 ===== */
+    function toast(msg) {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.textContent = msg;
+        $('#toasts').appendChild(t);
+        setTimeout(() => {
+            t.style.transition = 'opacity .3s';
+            t.style.opacity = '0';
+            setTimeout(() => t.remove(), 300);
+        }, 1700);
+    }
+
+    /* ===== 전사 렌더 ===== */
+    const pane = $('#pane-script');
+    let editingIndex = -1;
+
+    function render() {
+        let html = '';
+        turns.forEach((tn, i) => {
+            const prev = turns[i - 1];
+            const gap = !prev || prev.s !== tn.s ? ' gap' : '';
+            const editing = i === editingIndex ? ' editing' : '';
+            const firstDisabled = i === 0 ? 'disabled' : '';
+            const lastDisabled = i === turns.length - 1 ? 'disabled' : '';
+            html += `<div class="turn ${tn.s}${gap}${editing}" data-i="${i}">
+      <div class="tools">
+        <button class="tool" data-a="edit" title="편집">${ICO.pencil}</button>
+        <button class="tool" data-a="swap" title="반대편으로">${ICO.swap}</button>
+        <button class="tool" data-a="mergeup" title="위와 합치기" ${firstDisabled}>${ICO.up}</button>
+        <button class="tool" data-a="mergedown" title="아래와 합치기" ${lastDisabled}>${ICO.down}</button>
+        <button class="tool danger" data-a="del" title="이 대화 삭제">${ICO.trash}</button>
+      </div>
+      <div class="col">
+        <div class="bubble-row">
+          <div class="bubble" ${editing ? 'contenteditable="true"' : ''}>${escapeHtml(tn.x)}</div>
+          <div class="ts">${fmt(tn.t)}</div>
+        </div>
+        <div class="edit-bar">
+          <button class="ebtn save" data-a="save">저장</button>
+          <button class="ebtn" data-a="cancel">취소</button>
+          <button class="ebtn split" data-a="split">${ICO.split} 커서에서 나누기</button>
+        </div>
+      </div>
+    </div>`;
+        });
+        pane.innerHTML = html;
+        if (editingIndex >= 0) {
+            const b = pane.querySelector(`.turn[data-i="${editingIndex}"] .bubble`);
+            if (b) {
+                b.focus();
+                placeCaretEnd(b);
+            }
+        }
+        updateHighlight();
+    }
+    function escapeHtml(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function placeCaretEnd(el) {
+        const r = document.createRange();
+        r.selectNodeContents(el);
+        r.collapse(false);
+        const s = window.getSelection();
+        s.removeAllRanges();
+        s.addRange(r);
+    }
+    function caretOffset(el) {
+        const s = window.getSelection();
+        if (!s.rangeCount) return el.textContent.length;
+        const r = s.getRangeAt(0);
+        const pre = r.cloneRange();
+        pre.selectNodeContents(el);
+        pre.setEnd(r.endContainer, r.endOffset);
+        return pre.toString().length;
+    }
+
+    const ICO = {
+        pencil: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+        swap: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7h12l-3-3M16 17H4l3 3"/></svg>',
+        up: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+        down: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>',
+        split: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v18M3 8h2M3 16h2"/><path d="M16 3v18M19 8h2M19 16h2"/></svg>',
+        trash: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
+    };
+
+    /* hover 툴바 위치: 말풍선 중앙 정렬, 탭 밖으로 나가면 보정 */
+    let hoverTurn = null;
+    function positionTools(turnEl) {
+        const tools = turnEl.querySelector('.tools');
+        const bubble = turnEl.querySelector('.bubble');
+        if (!tools || !bubble) return;
+        const pr = pane.getBoundingClientRect(),
+            tr = turnEl.getBoundingClientRect(),
+            br = bubble.getBoundingClientRect();
+        const tw = tools.offsetWidth || 150,
+            margin = 10;
+        let left = br.left + br.width / 2 - tr.left - tw / 2; // 말풍선 중앙
+        const minL = pr.left + margin - tr.left; // 탭 좌측 경계
+        const maxL = pr.right - margin - tw - tr.left; // 탭 우측 경계
+        left = Math.max(minL, Math.min(maxL, left));
+        tools.style.left = left + 'px';
+    }
+    pane.addEventListener('mouseover', e => {
+        const t = e.target.closest('.turn');
+        if (!t || t === hoverTurn) return;
+        hoverTurn = t;
+        positionTools(t);
+    });
+
+    /* 전사 인터랙션 (위임) */
+    pane.addEventListener('click', e => {
+        const turnEl = e.target.closest('.turn');
+        if (!turnEl) return;
+        const i = +turnEl.dataset.i;
+        const toolBtn = e.target.closest('[data-a]');
+        if (toolBtn) {
+            const a = toolBtn.dataset.a;
+            if (a === 'edit') {
+                editingIndex = i;
+                render();
+                return;
+            }
+            if (a === 'swap') {
+                turns[i].s = turns[i].s === 'A' ? 'B' : 'A';
+                markStale();
+                render();
+                toast('화자를 반대편으로 옮겼습니다');
+                return;
+            }
+            if (a === 'mergeup') {
+                if (i > 0) {
+                    turns[i - 1].x += ' ' + turns[i].x;
+                    turns.splice(i, 1);
+                    editingIndex = -1;
+                    markStale();
+                    render();
+                    toast('위 발화와 합쳤습니다');
+                }
+                return;
+            }
+            if (a === 'mergedown') {
+                if (i < turns.length - 1) {
+                    turns[i].x += ' ' + turns[i + 1].x;
+                    turns.splice(i + 1, 1);
+                    editingIndex = -1;
+                    markStale();
+                    render();
+                    toast('아래 발화와 합쳤습니다');
+                }
+                return;
+            }
+            if (a === 'del') {
+                turns.splice(i, 1);
+                editingIndex = -1;
+                if (lastIdx >= i) lastIdx = -1;
+                markStale();
+                render();
+                toast('대화를 삭제했습니다');
+                return;
+            }
+            if (a === 'save') {
+                const b = turnEl.querySelector('.bubble');
+                turns[i].x = b.textContent.trim();
+                editingIndex = -1;
+                markStale();
+                render();
+                toast('수정했습니다');
+                return;
+            }
+            if (a === 'cancel') {
+                editingIndex = -1;
+                render();
+                return;
+            }
+            if (a === 'split') {
+                const b = turnEl.querySelector('.bubble');
+                const off = caretOffset(b);
+                const text = b.textContent;
+                const a1 = text.slice(0, off).trim(),
+                    a2 = text.slice(off).trim();
+                if (!a1 || !a2) {
+                    toast('커서를 문장 중간에 두고 나눠 주세요');
+                    return;
+                }
+                const nextT = turns[i + 1] ? turns[i + 1].t : turns[i].t + 4;
+                const midT = Math.round((turns[i].t + nextT) / 2);
+                const sp = turns[i].s;
+                turns.splice(i, 1, { s: sp, t: turns[i].t, x: a1 }, { s: sp, t: midT, x: a2 });
+                editingIndex = -1;
+                markStale();
+                render();
+                toast('발화를 둘로 나눴습니다');
+                return;
+            }
+            return;
+        }
+        // 말풍선 본문 클릭 = 그 지점부터 이어서 재생 (편집 중 제외)
+        if (e.target.closest('.bubble') && i !== editingIndex) {
+            seekTo(turns[i].t);
+            follow = true;
+            if (!playing) play();
+        }
+    });
+
+    /* ===== 오디오 (시뮬레이션 트랜스포트) ===== */
+    let cur = 0,
+        playing = false,
+        speed = 1,
+        follow = true,
+        timer = null,
+        lastIdx = -1;
+    const ppBtn = $('#pp'),
+        fill = $('#fill'),
+        knob = $('#knob'),
+        timeEl = $('#time'),
+        track = $('#track');
+    const ICO_PLAY =
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>';
+    const ICO_PAUSE =
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+    function setPP() {
+        ppBtn.innerHTML = playing ? ICO_PAUSE : ICO_PLAY;
+    }
+    function play() {
+        if (cur >= TOTAL) cur = 0;
+        playing = true;
+        setPP();
+        clearInterval(timer);
+        timer = setInterval(() => {
+            cur += 0.1 * speed;
+            if (cur >= TOTAL) {
+                cur = TOTAL;
+                pause();
+            }
+            paint();
+        }, 100);
+    }
+    function pause() {
+        playing = false;
+        setPP();
+        clearInterval(timer);
+    }
+    function toggle() {
+        playing ? pause() : play();
+    }
+    function seekTo(s) {
+        cur = Math.max(0, Math.min(TOTAL, s));
+        paint();
+    }
+    function paint() {
+        const p = (cur / TOTAL) * 100;
+        fill.style.width = p + '%';
+        knob.style.left = p + '%';
+        timeEl.textContent = fmt(cur) + ' / ' + fmt(TOTAL);
+        updateHighlight();
+    }
+    function updateHighlight() {
+        let idx = -1;
+        for (let i = 0; i < turns.length; i++) {
+            if (turns[i].t <= cur) idx = i;
+            else break;
+        }
+        if (idx === lastIdx && pane.querySelector('.turn.playing')) return;
+        pane.querySelectorAll('.turn.playing').forEach(el => el.classList.remove('playing'));
+        if (idx >= 0) {
+            const el = pane.querySelector(`.turn[data-i="${idx}"]`);
+            if (el) {
+                el.classList.add('playing');
+                if (playing && follow && idx !== lastIdx && $('#pane-script').classList.contains('active'))
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+        lastIdx = idx;
+    }
+    ppBtn.onclick = toggle;
+    track.onclick = e => {
+        const r = track.getBoundingClientRect();
+        follow = true;
+        seekTo(((e.clientX - r.left) / r.width) * TOTAL);
+    };
+    pane.addEventListener('wheel', () => {
+        follow = false;
+    });
+    /* ===== 볼륨 / 음소거 ===== */
+    const ICO_VOL =
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M19 5a9 9 0 0 1 0 14M15.5 8.5a4 4 0 0 1 0 7"/></svg>';
+    const ICO_LOW =
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a4 4 0 0 1 0 7"/></svg>';
+    const ICO_MUTE =
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M23 9l-6 6M17 9l6 6"/></svg>';
+    const volEl = $('#vol'),
+        muteBtn = $('#mute');
+    let muted = false,
+        lastVol = 80;
+    function updateVolIcon() {
+        const v = +volEl.value;
+        if (muted || v === 0) {
+            muteBtn.innerHTML = ICO_MUTE;
+            muteBtn.classList.add('muted');
+            muteBtn.title = '음소거 해제';
+        } else {
+            muteBtn.innerHTML = v <= 45 ? ICO_LOW : ICO_VOL;
+            muteBtn.classList.remove('muted');
+            muteBtn.title = '음소거';
+        }
+    }
+    muteBtn.onclick = () => {
+        if (muted) {
+            muted = false;
+            volEl.value = lastVol > 0 ? lastVol : 80;
+            toast('음소거 해제');
+        } else {
+            muted = true;
+            lastVol = +volEl.value || 80;
+            volEl.value = 0;
+            toast('음소거');
+        }
+        updateVolIcon();
+    };
+    volEl.oninput = () => {
+        const v = +volEl.value;
+        muted = v === 0;
+        if (v > 0) lastVol = v;
+        updateVolIcon();
+    };
+    updateVolIcon();
+
+    /* ===== 탭 ===== */
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.onclick = () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            $('#pane-' + tab.dataset.tab).classList.add('active');
+        };
+    });
+    function activeTab() {
+        return document.querySelector('.tab.active').dataset.tab;
+    }
+    const TAB_KO = { script: '대화 기록', summary: '요약', coach: '상담 도우미' };
+
+    /* ===== stale 재생성 ===== */
+    function markStale() {
+        $('#stale-summary').classList.add('show');
+        $('#stale-coach').classList.add('show');
+        document.querySelector('.tab[data-tab="summary"]').classList.add('is-stale');
+        document.querySelector('.tab[data-tab="coach"]').classList.add('is-stale');
+    }
+    document.querySelectorAll('.regen').forEach(b => {
+        b.onclick = () => {
+            const which = b.dataset.regen;
+            $('#stale-' + which).classList.remove('show');
+            document.querySelector(`.tab[data-tab="${which}"]`).classList.remove('is-stale');
+            toast((which === 'summary' ? '요약' : '코칭') + '을 다시 생성했습니다');
+        };
+    });
+
+    /* ===== 메뉴 토글 ===== */
+    let openMenu = null;
+    function closeMenus() {
+        document.querySelectorAll('.menu.open').forEach(m => m.classList.remove('open'));
+        openMenu = null;
+    }
+    document.querySelectorAll('[data-menu]').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const m = btn.parentElement.querySelector('.menu');
+            const wasOpen = m.classList.contains('open');
+            closeMenus();
+            if (!wasOpen) {
+                m.classList.add('open');
+                openMenu = m;
+            }
+        });
+    });
+    document.addEventListener('click', closeMenus);
+
+    /* 메뉴 액션 */
+    $('#menu-copy').addEventListener('click', e => {
+        const it = e.target.closest('[data-act]');
+        if (!it) return;
+        doCopy(it.dataset.act);
+        closeMenus();
+    });
+    const exportDocs = $('#export-docs');
+    exportDocs.addEventListener('click', e => e.stopPropagation());
+    function exportSelected() {
+        return [...exportDocs.querySelectorAll('input:checked')].map(c => TAB_KO[c.dataset.doc]);
+    }
+    $('#menu-export').addEventListener('click', e => {
+        const it = e.target.closest('[data-act]');
+        if (!it) return;
+        const docs = exportSelected();
+        if (docs.length === 0) {
+            toast('내보낼 문서를 선택하세요');
+            return;
+        }
+        if (it.dataset.act === 'email') {
+            toast(`${docs.join('·')} 이메일로 내보내기`);
+            return;
+        }
+        const fmtKind = it.dataset.act === 'dl-pdf' ? 'PDF' : 'TXT';
+        toast(`${docs.join('·')} ${fmtKind} 내보내기`);
+    });
+    $('#menu-more').addEventListener('click', e => {
+        const it = e.target.closest('[data-act]');
+        if (!it) return;
+        closeMenus();
+        if (it.dataset.act === 'retranscribe') openModal('retr');
+        if (it.dataset.act === 'reassign') openModal('plan');
+        if (it.dataset.act === 'delete') openModal('del');
+    });
+    $('#menu-speed').addEventListener('click', e => {
+        const it = e.target.closest('[data-spd]');
+        if (!it) return;
+        speed = parseFloat(it.dataset.spd);
+        $('#speed-label').textContent = it.dataset.spd + '×';
+        closeMenus();
+        toast(it.dataset.spd + '배속');
+    });
+    $('.aud-dl').addEventListener('click', () => toast('오디오 파일 다운로드'));
+
+    function doCopy(kind) {
+        const t = activeTab();
+        const ko = TAB_KO[t];
+        let out = '';
+        if (t === 'script') {
+            if (kind === 'copy-md') {
+                out = turns.map(x => `**${x.s === 'A' ? '치과측' : '환자측'}** (${fmt(x.t)})\n${x.x}`).join('\n\n');
+            } else {
+                out = turns.map(x => `[${x.s === 'A' ? '치과측' : '환자측'} ${fmt(x.t)}] ${x.x}`).join('\n');
+            }
+        } else {
+            const doc = $('#pane-' + t)
+                .querySelector('.doc')
+                .cloneNode(true);
+            const st = doc.querySelector('.stale');
+            if (st) st.remove();
+            out = doc.innerText.replace(/\n{3,}/g, '\n\n').trim();
+        }
+        try {
+            navigator.clipboard.writeText(out);
+        } catch (e) {}
+        toast(`${ko}을(를) ${kind === 'copy-md' ? '마크다운으로' : '텍스트로'} 복사했습니다`);
+    }
+
+    /* ===== 공유 링크 관리 (3일 고정, 단일 활성 링크) ===== */
+    let links = [];
+    let linkSeq = 1;
+    const shareDocs = $('#share-docs'),
+        genLink = $('#gen-link');
+
+    function selectedDocs() {
+        return [...shareDocs.querySelectorAll('input:checked')].map(c => c.dataset.doc);
+    }
+    function updateShareUI() {
+        const has = links.length > 0;
+        shareDocs.style.display = has ? 'none' : 'block';
+        genLink.style.display = has ? 'none' : 'flex';
+        genLink.disabled = selectedDocs().length === 0;
+        renderLinks();
+    }
+    shareDocs.addEventListener('click', e => e.stopPropagation());
+    shareDocs.addEventListener('change', e => {
+        e.stopPropagation();
+        genLink.disabled = selectedDocs().length === 0;
+    });
+
+    genLink.addEventListener('click', e => {
+        e.stopPropagation();
+        if (selectedDocs().length === 0) return;
+        const id = 'lk' + linkSeq++;
+        const url = 'https://share.dops.app/c/' + Math.random().toString(36).slice(2, 10);
+        links.push({ id, url, exp: Date.now() + 3 * 24 * 3600 * 1000 });
+        try {
+            navigator.clipboard.writeText(url);
+        } catch (_) {}
+        updateShareUI();
+        toast('외부 링크를 만들고 복사했습니다');
+    });
+    $('#menu-share').addEventListener('click', e => {
+        if (e.target.closest('.send-group')) e.stopPropagation(); // 받는사람 select·전송 줄은 메뉴 유지
+        const cp = e.target.closest('.link-copy');
+        const rv = e.target.closest('[data-act="revoke"]');
+        const sk = e.target.closest('[data-act="send-kakao"]');
+        const ss = e.target.closest('[data-act="send-sms"]');
+        if (cp) {
+            e.stopPropagation();
+            const l = links.find(x => x.id === cp.dataset.id);
+            if (l) {
+                try {
+                    navigator.clipboard.writeText(l.url);
+                } catch (_) {}
+                toast('링크를 복사했습니다');
+            }
+            return;
+        }
+        if (sk) {
+            const r = ($('#recip-kakao') || {}).value || '';
+            toast(`${r}에게 카카오톡으로 전송했습니다`);
+            return;
+        }
+        if (ss) {
+            const r = ($('#recip-sms') || {}).value || '';
+            toast(`${r}에게 SMS로 전송했습니다`);
+            return;
+        }
+        if (rv) {
+            e.stopPropagation();
+            links = links.filter(l => l.id !== rv.dataset.id);
+            updateShareUI();
+            toast('공유를 취소했습니다');
+            return;
+        }
+    });
+    const COPY_ICO =
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+    function renderLinks() {
+        const box = $('#links');
+        if (!links.length) {
+            box.innerHTML = '';
+            return;
+        }
+        box.innerHTML = links
+            .map(
+                l => `
+    <div class="link-card">
+      <div class="link-top">
+        <span class="link-url">${l.url}</span>
+        <button class="link-copy" data-id="${l.id}" title="링크 복사">${COPY_ICO}</button>
+      </div>
+      <div class="link-exp" data-exp="${l.exp}"></div>
+    </div>
+    <div class="send-group">
+      <div class="send-row">
+        <button class="mi mi-2 send-mi" data-act="send-kakao"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 5.9-.2.7-.7 2.4-.8 2.8 0 .2.1.3.3.2.3-.2 2.6-1.7 3.5-2.3.6.1 1.2.2 1.8.2 5 0 9-3.1 9-7s-4-7-9-7z"/></svg><span class="mi-tx"><b>카카오톡으로 전송</b></span></button>
+        <select class="recip-sel" id="recip-kakao"><option>황원장</option><option>박원장</option><option selected>안실장</option><option>김직원</option><option>이직원</option></select>
+      </div>
+      <div class="send-row">
+        <button class="mi mi-2 send-mi" data-act="send-sms"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8 8 0 0 1-11.6 7.1L4 20l1.4-4.2A8 8 0 1 1 21 11.5z"/><path d="M9 11h.01M12 11h.01M15 11h.01"/></svg><span class="mi-tx"><b>SMS로 전송</b></span></button>
+        <select class="recip-sel" id="recip-sms"><option>황원장</option><option>박원장</option><option selected>안실장</option><option>김직원</option><option>이직원</option></select>
+      </div>
+    </div>
+    <button class="mi revoke-mi" data-act="revoke" data-id="${l.id}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8M2 2l20 20"/></svg><b>공유 취소</b></button>`,
+            )
+            .join('');
+        tickLinks();
+    }
+    function tickLinks() {
+        document.querySelectorAll('.link-exp').forEach(el => {
+            const d = new Date(+el.dataset.exp);
+            el.textContent = `${d.getMonth() + 1}월 ${d.getDate()}일까지 공유`;
+        });
+    }
+    setInterval(tickLinks, 30000);
+    updateShareUI();
+
+    /* ===== 모달 ===== */
+    const overlay = $('#overlay');
+    function openModal(name) {
+        closeMenus();
+        overlay.classList.add('open');
+        document.querySelectorAll('.modal').forEach(m => (m.style.display = 'none'));
+        $('#modal-' + name).style.display = 'block';
+    }
+    function closeModal() {
+        overlay.classList.remove('open');
+    }
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) closeModal();
+        const c = e.target.closest('[data-close]');
+        if (c) closeModal();
+    });
+    overlay.addEventListener('click', e => {
+        const it = e.target.closest('[data-act]');
+        if (!it) return;
+        if (it.dataset.act === 'do-retr') {
+            const p = $('#retr-prompt').value.trim();
+            closeModal();
+            $('#retr-prompt').value = '';
+            toast(p ? '재전사를 요청했습니다 (추가 요청 반영)' : '재전사를 요청했습니다');
+        }
+        if (it.dataset.act === 'do-plan') {
+            closeModal();
+            toast('치료계획 연결을 변경했습니다');
+        }
+        if (it.dataset.act === 'do-del') {
+            closeModal();
+            toast('상담내역을 삭제했습니다 (휴지통 보관)');
+        }
+    });
+    $('#plan-list').addEventListener('click', e => {
+        const opt = e.target.closest('.plan-opt');
+        if (!opt) return;
+        $('#plan-list')
+            .querySelectorAll('.plan-opt')
+            .forEach(o => o.classList.remove('sel'));
+        opt.classList.add('sel');
+    });
+
+    /* 코칭 → 전사 점프 (이번엔 디자인만, no-op) */
+    document
+        .querySelectorAll('[data-jump]')
+        .forEach(j => (j.onclick = () => toast('전사 발화로 이동 (다음 단계 구현 예정)')));
+
+    $('#back').onclick = () => { try { parent.postMessage({ type: 'dops-back-list' }, '*'); } catch (e) {} };
+
+    /* 초기화 */
+    setPP();
+    paint();
+    render();
+</script>

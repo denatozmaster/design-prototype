@@ -5,6 +5,7 @@ import PhotoReceptionPage from '@/pages/photo-reception'
 import ClinicalChartPage from '@/pages/clinical-chart'
 import ResinSurfacePage from '@/pages/resin-surface'
 import GiSurfacePage from '@/pages/gi-surface'
+import PatientConsultPage from '@/pages/patient-consult'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/clinical-chart" element={<ClinicalChartPage />} />
         <Route path="/resin-surface" element={<ResinSurfacePage />} />
         <Route path="/gi-surface" element={<GiSurfacePage />} />
+        <Route path="/patient-consult" element={<PatientConsultPage />} />
       </Routes>
     </BrowserRouter>
   )

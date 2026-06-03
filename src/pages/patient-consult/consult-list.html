@@ -1,0 +1,523 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>상담내역 — 리스트 뷰 (borderless)</title>
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
+/>
+<style>
+    :root {
+        --navy: #1b3a5b;
+        --teal: #0d9488;
+        --teal-tint: #f0f8f6;
+        --amber: #b45309;
+        --bg: #eef2f6;
+        --surface: #ffffff;
+        --line: #eaeff4;
+        --ink: #0f172a;
+        --ink-2: #475569;
+        --ink-3: #94a3b8;
+    }
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    html,
+    body {
+        height: 100%;
+    }
+    body {
+        /* 임베드(iframe): 캔버스 중앙정렬 대신 패널이 iframe을 꽉 채움 (이중스크롤 방지) */
+        overflow: hidden;
+        background: var(--surface);
+        font-family:
+            'Pretendard',
+            -apple-system,
+            'Apple SD Gothic Neo',
+            'Malgun Gothic',
+            sans-serif;
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+        font-feature-settings: 'tnum' 1;
+    }
+
+    /* ── 임베드: iframe(부모 컨테이너)를 꽉 채움 — 내부 .list만 스크롤 ── */
+    .panel {
+        width: 100%;
+        height: 100%;
+        background: var(--surface);
+        border: none;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    .list {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 8px 0;
+    }
+    .list::-webkit-scrollbar {
+        width: 10px;
+    }
+    .list::-webkit-scrollbar-thumb {
+        background: #d7dee6;
+        border-radius: 999px;
+        border: 3px solid var(--surface);
+    }
+    .list::-webkit-scrollbar-thumb:hover {
+        background: #a8b4c2;
+    }
+
+    /* ── 행 ── */
+    .row {
+        position: relative;
+        padding: 18px 26px;
+        cursor: pointer;
+        transition: background-color 0.14s ease;
+    }
+    .row + .row::before {
+        content: '';
+        position: absolute;
+        left: 26px;
+        right: 26px;
+        top: 0;
+        height: 1px;
+        background: var(--line);
+    }
+    .row:hover {
+        background: #f8fafc;
+    }
+
+    /* 현재 포커스 계획에 캡처된 녹음 = 강조 */
+    .row.focus {
+        background: var(--teal-tint);
+    }
+    .row.focus:hover {
+        background: #eaf5f2;
+    }
+    .row.focus::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--teal);
+    }
+    .row.focus::before,
+    .row.focus + .row::before {
+        display: none;
+    }
+
+    /* ── 1단: 메타줄 ── */
+    .top {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+    .cal {
+        color: var(--ink-3);
+        display: inline-flex;
+        flex: 0 0 auto;
+    }
+    .date {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+        font-variant-numeric: tabular-nums;
+    }
+    .date .time {
+        color: var(--ink-2);
+        font-weight: 500;
+        margin-left: 2px;
+    }
+    .rel {
+        font-size: 12px;
+        color: var(--ink-3);
+        font-weight: 500;
+        letter-spacing: -0.01em;
+    }
+    .spacer {
+        flex: 1;
+    }
+
+    .tag-plan {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #0b6e66;
+        background: #dcf0ec;
+        border: 1px solid #bfe3dd;
+        padding: 2px 8px;
+        border-radius: 6px;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+    }
+    .tag-plan .d {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--teal);
+    }
+
+    .dur {
+        font-size: 12.5px;
+        color: var(--ink-2);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+    .dur svg {
+        opacity: 0.5;
+    }
+
+    /* hover 시 등장하는 더보기 버튼 (항상 height 점유 → 세로 흔들림 없음, 가로만 애니메이션) */
+    .menu-btn {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 24px;
+        width: 0;
+        opacity: 0;
+        overflow: hidden;
+        pointer-events: none;
+        border: none;
+        background: transparent;
+        color: var(--ink-3);
+        border-radius: 6px;
+        cursor: pointer;
+        transition:
+            opacity 0.14s ease,
+            width 0.18s ease,
+            margin-left 0.18s ease;
+    }
+    .row:hover .menu-btn,
+    .row.menu-open .menu-btn {
+        width: 24px;
+        opacity: 1;
+        pointer-events: auto;
+        margin-left: 7px;
+    }
+    .menu-btn:hover {
+        background: #edf1f6;
+        color: var(--ink-2);
+    }
+
+    /* ── 2단: 본문(요약) + 상태 뱃지 같은 레벨 ── */
+    .body {
+        margin-top: 9px;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        min-height: 21px;
+    }
+    .summary {
+        flex: 1;
+        min-width: 0;
+        font-size: 14px;
+        line-height: 1.55;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .status {
+        margin-left: auto;
+        flex: 0 0 auto;
+        margin-top: 1px;
+        display: inline-flex;
+        align-items: center;
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        padding: 3px 9px;
+        border-radius: 7px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+    .status.done {
+        color: #0b6e66;
+        background: #e6f3f1;
+        border-color: #cde8e4;
+    }
+    .status.writing {
+        color: var(--amber);
+        background: #fbf1e3;
+        border-color: #f2e1c7;
+    }
+
+    /* ── popover ── */
+    .popover {
+        position: fixed;
+        z-index: 50;
+        min-width: 206px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow:
+            0 12px 32px rgba(15, 23, 42, 0.16),
+            0 2px 6px rgba(15, 23, 42, 0.08);
+        padding: 6px;
+        display: none;
+        transform-origin: top right;
+    }
+    .popover.open {
+        display: block;
+        animation: popin 0.12s ease;
+    }
+    @keyframes popin {
+        from {
+            opacity: 0;
+            transform: translateY(-4px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+    .pop-item {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        width: 100%;
+        padding: 9px 10px;
+        border: none;
+        background: transparent;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-2);
+        border-radius: 7px;
+        cursor: pointer;
+        text-align: left;
+        letter-spacing: -0.01em;
+    }
+    .pop-item:hover {
+        background: #f1f5f9;
+        color: var(--ink);
+    }
+    .pop-item.danger {
+        color: #b91c1c;
+    }
+    .pop-item.danger:hover {
+        background: #fef2f2;
+        color: #991b1b;
+    }
+    .pop-item svg {
+        flex: 0 0 auto;
+        opacity: 0.85;
+    }
+</style>
+
+<div class="panel" role="region" aria-label="상담내역">
+    <div class="list" id="list"></div>
+</div>
+
+<!-- 공용 popover -->
+<div class="popover" id="popover">
+    <button class="pop-item" data-act="link">
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        >
+            <path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" />
+            <path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" />
+        </svg>
+        <span>현재 치료계획으로 연결</span>
+    </button>
+    <button class="pop-item danger" data-act="delete">
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        >
+            <path d="M3 6h18" />
+            <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+        </svg>
+        <span>상담내역 삭제</span>
+    </button>
+</div>
+
+<script>
+    const TODAY = new Date(2026, 5, 3); // 2026-06-03
+
+    const sessions = [
+        { date: '2026-05-20', time: '14:30', dur: '09:42', status: 'writing', focus: false, summary: '' },
+        {
+            date: '2026-04-10',
+            time: '10:05',
+            dur: '15:48',
+            status: 'done',
+            focus: false,
+            summary: '상악 우측 신경치료 경과 확인 및 크라운 본뜨기 진행, 다음 내원 시 보철 장착 예정으로 안내',
+        },
+        {
+            date: '2026-03-23',
+            time: '18:16',
+            dur: '12:34',
+            status: 'done',
+            focus: true,
+            summary:
+                '상악 구치부 불편감으로 내원, 검진 후 15·16번 신경치료 및 크라운 치료 결정, 차기 스케일링 예약 완료',
+        },
+        {
+            date: '2026-03-09',
+            time: '11:20',
+            dur: '06:58',
+            status: 'done',
+            focus: false,
+            summary: '정기 검진 및 스케일링 진행, 하악 만성 염증 치아의 발치 가능성을 사전 안내',
+        },
+        {
+            date: '2026-02-15',
+            time: '16:40',
+            dur: '21:05',
+            status: 'done',
+            focus: false,
+            summary: '임플란트 상담 초진, 전체 비용 안내 및 치료 기간 설명, 가족과 상의 후 결정하기로 함',
+        },
+    ];
+
+    const statusMeta = {
+        done: { cls: 'done', label: '완료' },
+        writing: { cls: 'writing', label: '내용 작성 중' },
+    };
+
+    // 생성일시 humanized ('약' 제거)
+    function humanize(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00');
+        const days = Math.round((TODAY - d) / 86400000);
+        if (days <= 0) return '오늘';
+        if (days === 1) return '어제';
+        if (days < 7) return days + '일 전';
+        if (days < 28) return Math.floor(days / 7) + '주 전';
+        if (days < 365) return Math.round(days / 30) + '개월 전';
+        return Math.round(days / 365) + '년 전';
+    }
+
+    // 날짜 포맷: yyyy.mm.dd 오전/오후 h:mm
+    function fmtDate(dateStr, time) {
+        const [Y, M, D] = dateStr.split('-');
+        const [hh, mm] = time.split(':').map(Number);
+        const ampm = hh < 12 ? '오전' : '오후';
+        let h12 = hh % 12;
+        if (h12 === 0) h12 = 12;
+        return { date: `${Y}.${M}.${D}`, time: `${ampm} ${h12}:${String(mm).padStart(2, '0')}` };
+    }
+
+    // 길이 humanized: 초 올림 → "xx분"
+    function durMin(mmss) {
+        const [m, s] = mmss.split(':').map(Number);
+        return Math.ceil((m * 60 + s) / 60) + '분';
+    }
+
+    const calIcon =
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>';
+    const clockIcon =
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+    const dotsIcon =
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>';
+
+    const list = document.getElementById('list');
+
+    sessions.forEach(s => {
+        const st = statusMeta[s.status];
+        const dt = fmtDate(s.date, s.time);
+        const row = document.createElement('div');
+        row.className = 'row' + (s.focus ? ' focus' : '');
+        row.setAttribute('role', 'button');
+        row.setAttribute('tabindex', '0');
+        row.innerHTML = `
+      <div class="top">
+        <span class="cal">${calIcon}</span>
+        <span class="date">${dt.date} <span class="time">${dt.time}</span></span>
+        <span class="rel">${humanize(s.date)}</span>
+        <span class="spacer"></span>
+        ${s.focus ? '<span class="tag-plan"><span class="d"></span>현재 계획</span>' : ''}
+        <span class="dur">${clockIcon}${durMin(s.dur)}</span>
+        <button class="menu-btn" aria-label="더보기">${dotsIcon}</button>
+      </div>
+      <div class="body">
+        ${s.summary ? `<div class="summary">${s.summary}</div>` : ''}
+        <span class="status ${st.cls}">${st.label}</span>
+      </div>
+    `;
+        list.appendChild(row);
+    });
+
+    // ── popover 제어 ──
+    const popover = document.getElementById('popover');
+    let openRow = null;
+
+    function closePop() {
+        popover.classList.remove('open');
+        if (openRow) {
+            openRow.classList.remove('menu-open');
+            openRow = null;
+        }
+    }
+
+    list.addEventListener('click', e => {
+        const btn = e.target.closest('.menu-btn');
+        if (btn) {
+            e.stopPropagation();
+            const row = btn.closest('.row');
+            if (openRow === row) {
+                closePop();
+                return;
+            }
+            closePop();
+            openRow = row;
+            row.classList.add('menu-open');
+            popover.classList.add('open');
+            const r = btn.getBoundingClientRect();
+            let left = r.right - popover.offsetWidth;
+            if (left < 8) left = 8;
+            popover.style.left = left + 'px';
+            popover.style.top = r.bottom + 6 + 'px';
+            return;
+        }
+        // 행 본문 클릭 → 상세 진입 (부모에 알림 → list→detail 전환)
+        const row = e.target.closest('.row');
+        if (row) {
+            try { parent.postMessage({ type: 'dops-open-detail' }, '*'); } catch (err) {}
+        }
+    });
+
+    popover.addEventListener('click', e => e.stopPropagation());
+    popover.querySelectorAll('.pop-item').forEach(it => {
+        it.addEventListener('click', () => {
+            // 디자인 단계: 동작은 no-op, 메뉴만 닫음
+            // data-act: link(현재 치료계획으로 연결) / delete(상담내역 삭제)
+            closePop();
+        });
+    });
+
+    document.addEventListener('click', closePop);
+    list.addEventListener('scroll', closePop, { passive: true });
+    window.addEventListener('resize', closePop);
+</script>

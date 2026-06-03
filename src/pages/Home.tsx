@@ -34,6 +34,12 @@ const modules: Module[] = [
     status: 'wip',
   },
   {
+    path: '/patient-consult',
+    title: '환자 상담 (치료계획)',
+    description: '치료계획·비용·동의를 한 화면에 — 환자 동석 상담용 단일 소스',
+    status: 'wip',
+  },
+  {
     path: '/clinical-chart',
     title: '전자차트 (템플릿)',
     description: '전자차트 모듈의 공통 배경 화면 — 새 모듈 생성 시 복사하여 사용',
