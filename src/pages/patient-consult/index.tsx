@@ -671,7 +671,7 @@ const cycleSig = () => setSigStatus((s) => SIG_CYCLE[(SIG_CYCLE.indexOf(s) + 1) 
 const total = planTotal(plan);
 const vat = 0;                                     // 비급여 진료는 면세가 일반적 — 행은 유지(읽기전용)
 return (
-<section style={{ flex: RIGHT_FLEX, background: tokens.bgRight, display: "flex", flexDirection: "column", padding: 16, gap: 16, minHeight: 0 }}>
+<section style={{ flex: RIGHT_FLEX, minWidth: 0, background: tokens.bgRight, display: "flex", flexDirection: "column", padding: 16, gap: 16, minHeight: 0 }}>
 {/* 헤더 bar + 세부 list (작은 간격으로 붙임) */}
 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, minHeight: 0 }}>
 {/* 얇은 bar (카드 제거, 투명 배경, 우측 정렬) */}
@@ -714,7 +714,7 @@ return (
         <div style={{ width: BTN_GROUP_W, flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
           <ActionButton block variant="primary" icon={Check}>치료계획 확정</ActionButton>
           <ActionButton block variant="outline" icon={PenLine}>환자 서명</ActionButton>
-          <ActionButton block variant="ghost" icon={ClipboardCheck}>상담 완료</ActionButton>
+          <ActionButton block variant="ghost" icon={ClipboardCheck}>상담 완료로 변경</ActionButton>
           <ActionButton block variant="danger" icon={Trash2} onClick={onDelete}>삭제</ActionButton>
         </div>
       </div>
@@ -891,15 +891,66 @@ function TreatmentPlanTab({ plans, selectedId, onSelect, onAddPlan, onAddItem })
   );
 }
 
+// ──────────────────────────────────────────────────────────────
+// 사진보기 — 간단한 임상사진 뷰어 (검정 배경, 메인 이미지 + 하단 썸네일 좌우 스크롤)
+//   원본: public/images/<name> · 썸네일: public/images/thumb/<name>
+// ──────────────────────────────────────────────────────────────
+const PHOTO_FILES = [
+  "20231007_123040.jpg", "20231007_123537.jpg", "20231007_123538.jpg", "20231007_123742.jpg", "20231007_123743.jpg",
+  "20231007_131850.jpg", "20231007_131851.jpg", "20231007_131853.jpg", "20231007_190750.jpg", "20231012_192253.jpg",
+  "20231012_192254.jpg", "20231013_175910.jpg", "20231013_175949.jpg", "20231019_191035.jpg", "20231026_191957.jpg",
+  "20231026_191958.jpg", "20231026_191959.jpg", "20231026_192000.jpg", "20231026_192001.jpg", "20231026_192002.jpg",
+  "20231026_192003.jpg", "20231026_192004.jpg", "20231026_192005.jpg", "20231026_192006.jpg", "20231102_191619.jpg",
+  "20231102_191620.jpg", "20231102_191621.jpg", "20240401_151942.jpg", "20240525_100209.jpg", "20240525_100605.jpg",
+  "20240525_100606.jpg", "20250315_100623.jpg", "20250315_100952.jpg", "20250315_102039.jpg", "20250315_102854.jpg",
+  "20250315_102855.jpg", "20250315_103325.jpg", "20250319_163826.jpg", "20251014_163100.jpg",
+];
+const photoSrc = (n) => `${import.meta.env.BASE_URL}images/${n}`;
+const thumbSrc = (n) => `${import.meta.env.BASE_URL}images/thumb/${n}`;
+
+function PhotoViewerTab() {
+  const [idx, setIdx] = useState(0);
+  const stripRef = useRef(null);
+  // 세로 휠 → 가로 스크롤 (passive:false 로 페이지 스크롤 방지)
+  useEffect(() => {
+    const el = stripRef.current;
+    if (!el) return;
+    const onWheel = (e) => {
+      if (e.deltaY === 0) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+  return (
+    <div style={{ height: "100%", width: "100%", minWidth: 0, display: "flex", flexDirection: "column", background: "#000", minHeight: 0 }}>
+      {/* 메인 이미지 */}
+      <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+        <img src={photoSrc(PHOTO_FILES[idx])} alt={PHOTO_FILES[idx]} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }} />
+      </div>
+      {/* 썸네일 푸터 (좌우 스크롤) */}
+      <div ref={stripRef} className="dops-thumbs" style={{ flexShrink: 0, minWidth: 0, display: "flex", alignItems: "center", gap: 8, overflowX: "auto", overflowY: "hidden", padding: "13px 12px", background: "#0A0A0A", borderTop: "1px solid #1F1F1F" }}>
+        {PHOTO_FILES.map((n, i) => (
+          <button key={n} onClick={() => setIdx(i)} title={n}
+            style={{ flexShrink: 0, width: 124, height: 88, padding: 0, border: i === idx ? `2px solid ${tokens.teal}` : "2px solid transparent", borderRadius: 6, overflow: "hidden", cursor: "pointer", background: "#000", opacity: i === idx ? 1 : 0.55 }}>
+            <img src={thumbSrc(n)} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
 // 좌측 영역 — 탭 구성
 // ─────────────────────────────────────────────────────────────
-const LEFT_TABS = ["치료계획", "상담내역", "상담보드", "치아보험"];
+const LEFT_TABS = ["치료계획", "사진보기", "치아보험", "상담내역", "치료사례"];
 
 function LeftPanel({ plans, selectedId, onSelect, onAddPlan, onAddItem }) {
 const [activeTab, setActiveTab] = useState("치료계획");
 return (
-<section style={{ flex: LEFT_FLEX, background: tokens.bgLeft, display: "flex", flexDirection: "column", minHeight: 0 }}>
+<section style={{ flex: LEFT_FLEX, minWidth: 0, background: tokens.bgLeft, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
 {/* 탭 바 */}
 <div style={{ height: 44, flexShrink: 0, display: "flex", alignItems: "stretch", borderBottom: `1px solid ${tokens.border}`, paddingLeft: 8 }}>
 {LEFT_TABS.map((tab) => {
@@ -922,10 +973,11 @@ style={{
 })}
 </div>
 {/* 본문 */}
-<div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+<div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: "hidden" }}>
 {activeTab === "치료계획" ? (
 <TreatmentPlanTab plans={plans} selectedId={selectedId} onSelect={onSelect} onAddPlan={onAddPlan} onAddItem={onAddItem} />
-) : activeTab === "상담내역" ? <ConsultationTab /> : null}
+) : activeTab === "상담내역" ? <ConsultationTab />
+: activeTab === "사진보기" ? <PhotoViewerTab /> : null}
 </div>
 </section>
 );
@@ -996,6 +1048,10 @@ return (
         .dops-addbtn:hover { background: #F0F8F6; border-color: #0D9488; }
         .dops-newplan { background: transparent; }
         .dops-newplan:hover { background: #E2E8F0; }
+        .dops-thumbs::-webkit-scrollbar { height: 10px; }
+        .dops-thumbs::-webkit-scrollbar-thumb { background: #6B7280; border-radius: 999px; }
+        .dops-thumbs::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+        .dops-thumbs::-webkit-scrollbar-track { background: transparent; }
       `}</style>
 </div>
 );
