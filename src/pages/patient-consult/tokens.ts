@@ -1,0 +1,20 @@
+// 환자상담 모듈 공유 디자인 토큰 (index.tsx · dental-insurance.tsx 등에서 import)
+export const tokens = {
+  navy: "#1E3A5F",
+  teal: "#0D9488",
+  bgBase: "#F8FAFC",
+  bgPanel: "#FFFFFF",
+  bgLeft: "#FFFFFF",
+  bgRight: "#F1F5F9",
+  border: "#E2E8F0",
+  borderStrong: "#CBD5E1",
+  textPrimary: "#0F172A",
+  textSecondary: "#475569",
+  textMuted: "#94A3B8",
+  rec: "#475569",
+  red: "#DC2626",
+  redDeep: "#B91C1C",
+  redSoftBg: "#FEF2F2",
+  redSoftBorder: "#FECACA",
+  amber: "#D97706",
+};

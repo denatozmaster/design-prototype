@@ -40,6 +40,12 @@ const modules: Module[] = [
     status: 'wip',
   },
   {
+    path: '/pi-input',
+    title: 'PI 입력 (Present illness)',
+    description: '현병력 입력 — 치식헤더·체크패널·내역·메모, 명시적 생성 버튼 추가',
+    status: 'ready',
+  },
+  {
     path: '/clinical-chart',
     title: '전자차트 (템플릿)',
     description: '전자차트 모듈의 공통 배경 화면 — 새 모듈 생성 시 복사하여 사용',
@@ -61,8 +67,8 @@ const statusColor: Record<Module['status'], string> = {
 
 export default function Home() {
   return (
-    <div className="min-h-svh bg-background">
-      <header className="border-b px-8 py-16">
+    <div className="flex h-svh flex-col overflow-hidden bg-background">
+      <header className="shrink-0 border-b px-8 py-16">
         <div className="mx-auto max-w-3xl">
           <p className="text-xs font-medium tracking-widest text-muted-foreground uppercase mb-3">
             Design Prototype
@@ -74,12 +80,13 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-8 py-10">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-          모듈 목록
-        </p>
-        <div className="space-y-3">
-          {modules.map((m) => (
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-3xl px-8 py-10">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+            모듈 목록
+          </p>
+          <div className="space-y-3">
+            {modules.map((m) => (
             <Link
               key={m.path}
               to={m.path}
@@ -99,6 +106,7 @@ export default function Home() {
               <ChevronRight className="w-5 h-5 text-muted-foreground/40 group-hover:text-primary transition-colors shrink-0" />
             </Link>
           ))}
+          </div>
         </div>
       </main>
     </div>

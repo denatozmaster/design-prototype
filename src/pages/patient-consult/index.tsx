@@ -5,29 +5,8 @@ import { Mic, Check, PenLine, Printer, Trash2, AlertTriangle, GripVertical, Info
 // 상담내역 리스트/상세: 편집 가능한 HTML 원본을 raw 문자열로 로드 (기존 base64 대체)
 import CONSULT_DETAIL_HTML from "./consult-detail.html?raw";
 import CONSULT_LIST_HTML from "./consult-list.html?raw";
-
-// ─────────────────────────────────────────────────────────────
-// 디자인 토큰
-// ─────────────────────────────────────────────────────────────
-const tokens = {
-navy: "#1E3A5F",
-teal: "#0D9488",
-bgBase: "#F8FAFC",
-bgPanel: "#FFFFFF",
-bgLeft: "#FFFFFF",
-bgRight: "#F1F5F9",
-border: "#E2E8F0",
-borderStrong: "#CBD5E1",
-textPrimary: "#0F172A",
-textSecondary: "#475569",
-textMuted: "#94A3B8",
-rec: "#475569",
-red: "#DC2626",
-redDeep: "#B91C1C",
-redSoftBg: "#FEF2F2",
-redSoftBorder: "#FECACA",
-amber: "#D97706",
-};
+import { tokens } from "./tokens";
+import DentalInsuranceTab from "./dental-insurance";
 
 const LEFT_FLEX = 1;
 const RIGHT_FLEX = 1;
@@ -977,7 +956,8 @@ style={{
 {activeTab === "치료계획" ? (
 <TreatmentPlanTab plans={plans} selectedId={selectedId} onSelect={onSelect} onAddPlan={onAddPlan} onAddItem={onAddItem} />
 ) : activeTab === "상담내역" ? <ConsultationTab />
-: activeTab === "사진보기" ? <PhotoViewerTab /> : null}
+: activeTab === "사진보기" ? <PhotoViewerTab />
+: activeTab === "치아보험" ? <DentalInsuranceTab /> : null}
 </div>
 </section>
 );
@@ -1048,6 +1028,7 @@ return (
         .dops-addbtn:hover { background: #F0F8F6; border-color: #0D9488; }
         .dops-newplan { background: transparent; }
         .dops-newplan:hover { background: #E2E8F0; }
+        .dops-insmenu:hover { background: #F8FAFC; }
         .dops-thumbs::-webkit-scrollbar { height: 10px; }
         .dops-thumbs::-webkit-scrollbar-thumb { background: #6B7280; border-radius: 999px; }
         .dops-thumbs::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
