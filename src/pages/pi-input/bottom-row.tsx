@@ -14,12 +14,12 @@ function MemoEditor({ value, onSave }: { value: string; onSave: (v: string) => v
   return (
     <div className="flex w-[350px] shrink-0 flex-col">
       <div className="flex items-center justify-between border-b px-3 py-1.5">
-        <span className="text-[11px] font-semibold text-neutral-500">메모</span>
+        <span className="text-[12px] font-semibold text-neutral-500">메모</span>
         <button
           type="button"
           disabled={!dirty}
           onClick={() => onSave(text)}
-          className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+          className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[12px] font-medium transition-colors ${
             dirty
               ? 'cursor-pointer text-neutral-600 hover:bg-neutral-100'
               : 'cursor-not-allowed text-neutral-300'
@@ -34,7 +34,7 @@ function MemoEditor({ value, onSave }: { value: string; onSave: (v: string) => v
         onChange={(e) => setText(e.target.value)}
         spellCheck={false}
         placeholder="자유 메모 입력"
-        className="flex-1 resize-none p-3 text-[12px] text-neutral-700 outline-none placeholder:text-neutral-300"
+        className="flex-1 resize-none p-3 text-[13px] text-neutral-700 outline-none placeholder:text-neutral-300"
       />
     </div>
   )
@@ -78,11 +78,11 @@ function RecordRow({
       {/* 좌: 치식 (140px) */}
       <div className="mr-3 flex w-[140px] shrink-0 flex-wrap content-start items-center gap-1">
         {record.teeth.length === 0
-          ? !isDraft && <span className="text-[11px] text-neutral-400">—</span>
+          ? !isDraft && <span className="text-[12px] text-neutral-400">—</span>
           : record.teeth.map((t) => (
               <span
                 key={t}
-                className="rounded bg-blue-50 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-blue-600"
+                className="rounded bg-blue-50 px-1.5 py-0.5 text-[12px] font-medium tabular-nums text-blue-600"
               >
                 #{t}
               </span>
@@ -90,18 +90,18 @@ function RecordRow({
       </div>
 
       {/* 우: 데이터 (증상 뱃지 + 메모 텍스트, 자동 줄바꿈) */}
-      <div className="min-w-0 flex-1 text-[12px] leading-relaxed text-neutral-700">
+      <div className="min-w-0 flex-1 text-[13px] leading-relaxed text-neutral-700">
         {record.symptoms.map((sid) => (
           <span
             key={sid}
-            className="mr-1 inline-block rounded bg-neutral-100 px-1.5 py-0.5 align-middle text-[11px] font-medium text-neutral-600"
+            className="mr-1 inline-block rounded bg-neutral-100 px-1.5 py-0.5 align-middle text-[12px] font-medium text-neutral-600"
           >
             {symptomLabelById[sid] ?? sid}
           </span>
         ))}
         {text && <span className="align-middle break-words">{text}</span>}
         {isDraft && empty && (
-          <span className="align-middle text-[12px] font-medium text-blue-500">
+          <span className="align-middle text-[13px] font-medium text-blue-500">
             새로운 PI를 입력 중입니다.
           </span>
         )}
@@ -151,11 +151,11 @@ export default function BottomRow({
       {/* 좌: 입력 내역 (최상단 draft + 기존 record) */}
       <div className="flex flex-1 flex-col border-r border-neutral-200">
         <div className="flex items-center justify-between border-b px-3 py-1.5">
-          <span className="text-[11px] font-semibold text-neutral-500">입력 내역</span>
+          <span className="text-[12px] font-semibold text-neutral-500">입력 내역</span>
           <button
             type="button"
             onClick={onNewDraft}
-            className="inline-flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-[11px] font-medium text-neutral-600 transition-colors hover:bg-neutral-100"
+            className="inline-flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-[12px] font-bold text-neutral-600 transition-colors hover:bg-neutral-100"
           >
             <Plus className="h-3 w-3" />
             새 PI 입력
